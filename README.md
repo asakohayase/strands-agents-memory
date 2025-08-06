@@ -106,7 +106,7 @@ uv run python main.py
 🤖 Agent: Based on your preferences, here are some comedy recommendations...
 ```
 
-🔧 Core Implementation
+Core Implementation
 Movie Recommendation Assistant Setup
 ```python
 from strands import Agent
