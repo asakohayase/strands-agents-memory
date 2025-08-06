@@ -4,7 +4,7 @@
 This project demonstrates how to build an AI agent that learns user preferences over time using the Strands Agents SDK and Mem0 memory system.
 
 
-## Features
+## 1. Features
 
 - **Persistent Memory**: Learns and remembers user preferences across conversations  
 - **Personalized Recommendations**: Tailored movie suggestions based on stored preferences  
@@ -12,7 +12,7 @@ This project demonstrates how to build an AI agent that learns user preferences 
 - **Genre Intelligence**: Maps user requests to available genres and learns preferences  
 - **Series Awareness**: Automatically applies ratings to entire movie series when applicable  
 
-## Architecture
+## 2. Architecture
 
 The system combines Strands Agents with Mem0's memory capabilities:
 
@@ -23,7 +23,7 @@ The system combines Strands Agents with Mem0's memory capabilities:
 - **Amazon Bedrock**: Claude 3.7 Sonnet model for natural language understanding  
 
 
-## Memory & Recommendation Flow
+## 3. Memory & Recommendation Flow
 
 ### Step 1: Memory Storage  
 User preferences and ratings are automatically stored using the `mem0_memory` tool with persistent vector embeddings.
@@ -32,7 +32,7 @@ User preferences and ratings are automatically stored using the `mem0_memory` to
 The system analyzes stored memories to generate personalized recommendations using custom scoring algorithms.
 
 
-## Quick Start
+## 4. Quick Start
 
 ### Prerequisites
 
@@ -106,7 +106,7 @@ uv run python main.py
 🤖 Agent: Based on your preferences, here are some comedy recommendations...
 ```
 
-Core Implementation
+## 5. Core Implementation
 Movie Recommendation Assistant Setup
 ```python
 from strands import Agent
@@ -168,9 +168,10 @@ class Genre(str, Enum):
     DOCUMENTARY = "documentary"
     ANIMATION = "animation"
 ```
+## 6. Links
+- Mem0 Memory Agent Official Documentation: https://strandsagents.com/latest/documentation/docs/examples/python/memory_agent/
 
-
-## Contributing
+## 7. Contributing
 
 We welcome contributions! Whether it's a bug fix, new feature, or suggestion for improvement — every bit helps.
 
