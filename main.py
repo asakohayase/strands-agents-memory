@@ -6,7 +6,8 @@ from strands import Agent
 from strands_tools import mem0_memory, use_llm
 
 
-USER_ID = "demo_user"
+USER_ID = "user_1"
+
 
 SYSTEM_PROMPT = """You are a movie recommendation assistant that learns user preferences over time.
 
@@ -61,20 +62,12 @@ class MovieRecommendationAssistant:
             model=bedrock_model,
         )
 
-        # Initialize with demo memories
-        self._initialize_demo_memories()
-
-    def _initialize_demo_memories(self) -> None:
-        """Initialize with demo movie preferences"""
-        init_memories = "I enjoy sci-fi movies with complex plots and philosophical themes. Christopher Nolan and Denis Villeneuve are among my favorite directors. I loved The Matrix and Inception. I'm not a big fan of horror movies."
-
         try:
-            result = self.agent.tool.mem0_memory(
-                action="store", content=init_memories, user_id=self.user_id
-            )
-            print("✅ Initialized demo memories:", result)
-        except Exception as e:
-            print(f"⚠️  Could not initialize memories: {e}")
+            existing = self.agent.tool.mem0_memory(action="list", user_id=self.user_id)
+            if existing.get("results"):
+                return
+        except Exception:
+            pass
 
     async def chat(self, message: str) -> str:
         response = await self.agent(message)
