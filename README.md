@@ -14,7 +14,7 @@ This project demonstrates how to build an AI agent that learns user preferences 
 
 ## 2. Architecture
 
-<img width="836" height="432" alt="Image" src="https://github.com/user-attachments/assets/bb776cfa-37b8-4e5b-8cfd-802d5dc78459" />
+<img width="1009" height="399" alt="Image" src="https://github.com/user-attachments/assets/ab7f7a1a-b48e-4b60-8a6d-90b4b01e1a55" />
 
 The system combines Strands Agents with Mem0's memory capabilities:
 
@@ -23,7 +23,7 @@ The system combines Strands Agents with Mem0's memory capabilities:
 - **FAISS Vector Database**: Local persistent storage for memory embeddings 
 - **Custom Tools**: Specialized movie rating and recommendation tools  
 - **Movie Database**: Curated collection of movies with genres and series information  
-- **Amazon Bedrock**: Claude 3.7 Sonnet model for natural language understanding  
+- **Amazon Bedrock**: Multiple Claude models - Claude 3.7 Sonnet (main agent), Claude 3.5 Haiku (memory processing), and Titan Text v2 (embeddings) 
 
 
 ## 3. Memory & Recommendation Flow
