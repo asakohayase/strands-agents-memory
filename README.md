@@ -145,7 +145,7 @@ def recommend_movies(user_memories: str = "", count: int = 5, genre_filter: str 
         # Apply preference boosts/penalties
     # Return sorted recommendations
 ```
-🎥 Movie Database Structure
+Movie Database Structure
 ```python
 @dataclass
 class Movie:
