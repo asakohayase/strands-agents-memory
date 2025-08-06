@@ -12,7 +12,6 @@ This project demonstrates how to build an AI agent that learns user preferences 
 - **Natural Language Processing**: Understands expressions like “I didn’t like Matrix” or “I loved Inception”  
 - **Genre Intelligence**: Maps user requests to available genres and learns preferences  
 - **Series Awareness**: Automatically applies ratings to entire movie series when applicable  
-- **FAISS Memory Backend**: Local vector storage with optional cloud backends (Qdrant, OpenSearch)  
 
 ---
 
@@ -119,7 +118,7 @@ Movie Recommendation Assistant Setup
 from strands import Agent
 from strands_tools import mem0_memory, use_llm
 
-class MemoryAssistant:
+class MovieRecommendationAssistant:
     def __init__(self, user_id: str = "demo_user"):
         self.agent = Agent(
             system_prompt=SYSTEM_PROMPT,
