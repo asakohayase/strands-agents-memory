@@ -43,7 +43,7 @@ Use the tools:
 # Configure Amazon Bedrock
 session = boto3.Session(region_name="us-west-2")
 bedrock_model = BedrockModel(
-    model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
+    model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
     boto_session=session,
     streaming=False,
 )
