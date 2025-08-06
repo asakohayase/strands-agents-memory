@@ -1,22 +1,52 @@
 import asyncio
+import boto3
+
+from strands.models import BedrockModel
 from strands import Agent
 from strands_tools import mem0_memory, use_llm
 
 
 USER_ID = "demo_user"
 
-SYSTEM_PROMPT = """You are a movie recommendation assistant with persistent memory capabilities.
+SYSTEM_PROMPT = """You are a movie recommendation assistant that learns user preferences over time.
 
-Your role is to manage movie preferences and provide personalized recommendations using memory operations.
+Your capabilities:
+- Store user movie ratings and preferences in persistent memory using mem0_memory
+- Provide personalized movie recommendations based on stored preferences
+- Handle natural language expressions like "I didn't like Matrix" or "I loved Inception"
+- Understand genre requests like "recommend comedies" or "I want sci-fi movies"
 
-Key responsibilities:
-- Store movie ratings and preferences using mem0_memory tool
-- Retrieve relevant user preferences when making recommendations
-- Provide personalized movie suggestions based on stored memories
-- Learn from user feedback to improve future recommendations
+Available genres in database: action, comedy, drama, horror, romance, sci-fi, thriller, fantasy, documentary, animation
 
-Use the available tools to store, retrieve, and manage user movie preferences effectively.
+Key behaviors:
+- When user expresses opinion about a movie, ask for a 1-5 star rating
+- Store individual movie ratings and derive genre preferences using rate_movie tool
+- When user asks for recommendations, ONLY use the recommend_movies tool - DO NOT generate your own lists or descriptions
+- Map user genre requests to available genres:
+  * comedies/funny → comedy
+  * anime/cartoons → animation  
+  * sci-fi/science fiction → sci-fi
+  * action movies → action
+  * romantic films → romance
+  * scary movies → horror
+- Present the tool results directly without adding your own movie suggestions
+- Remember preferences across conversations
+
+CRITICAL RULE: When calling recommend_movies tool, present its results directly. Do NOT add your own movie lists, descriptions, or duplicate the recommendations. Just use what the tool returns.
+
+Use the tools:
+- mem0_memory: Store and retrieve user preferences
+- rate_movie: Handle movie rating and series updates  
+- recommend_movies: Generate ALL recommendations (present results directly, no additional commentary)
 """
+
+# Configure Amazon Bedrock
+session = boto3.Session(region_name="us-west-2")
+bedrock_model = BedrockModel(
+    model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
+    boto_session=session,
+    streaming=False,
+)
 
 
 class MemoryAssistant:
@@ -27,7 +57,8 @@ class MemoryAssistant:
         self.agent = Agent(
             system_prompt=SYSTEM_PROMPT,
             tools=[mem0_memory, use_llm],
-            load_tools_from_directory=True,  # Auto-load custom movie tools
+            load_tools_from_directory=True,
+            model=bedrock_model,
         )
 
         # Initialize with demo memories
@@ -45,120 +76,16 @@ class MemoryAssistant:
         except Exception as e:
             print(f"⚠️  Could not initialize memories: {e}")
 
-    def process_input(self, user_input: str) -> str:
-        """Process user input following official documentation pattern"""
-        user_input_lower = user_input.lower()
-
-        # Check if this is a memory storage request
-        if user_input_lower.startswith(
-            ("remember ", "note that ", "i want you to know ")
-        ):
-            content = user_input.split(" ", 1)[1] if " " in user_input else user_input
-
-            try:
-                result = self.agent.tool.mem0_memory(
-                    action="store", content=content, user_id=self.user_id
-                )
-                print(f"🔍 DEBUG store result: {result}")
-                return f"I've stored that information in my memory."
-            except Exception as e:
-                print(f"❌ ERROR storing memory: {e}")
-                return f"Error storing memory: {e}"
-
-        # Check if this is a request to list all memories
-        if "show" in user_input_lower and "memories" in user_input_lower:
-            try:
-                result = self.agent.tool.mem0_memory(
-                    action="list", user_id=self.user_id
-                )
-                print(f"🔍 DEBUG list result: {result}")
-
-                memories = (
-                    result.get("memories", []) if isinstance(result, dict) else []
-                )
-                if memories:
-                    memory_list = "\n".join(
-                        [
-                            f"{i+1}. {mem.get('memory', mem)}"
-                            for i, mem in enumerate(memories)
-                        ]
-                    )
-                    return f"Here's everything I remember:\n\n{memory_list}"
-                else:
-                    return "I don't have any memories stored yet."
-            except Exception as e:
-                print(f"❌ ERROR listing memories: {e}")
-                return f"Error listing memories: {e}"
-
-        # For other queries, retrieve relevant memories and generate response
-        try:
-            print(f"🔍 DEBUG retrieving memories for query: '{user_input}'")
-
-            retrieved_memories = self.agent.tool.mem0_memory(
-                action="retrieve", query=user_input, user_id=self.user_id
-            )
-            print(f"🔍 DEBUG retrieved memories: {retrieved_memories}")
-
-            memories = (
-                retrieved_memories.get("memories", [])
-                if isinstance(retrieved_memories, dict)
-                else []
-            )
-
-            if memories:
-                # Format memories for the LLM
-                memories_str = "\n".join(
-                    [f"- {mem.get('memory', mem)}" for mem in memories]
-                )
-
-                prompt = f"""
-                User ID: {self.user_id}
-                User question: "{user_input}"
-                
-                Relevant memories for user {self.user_id}:
-                {memories_str}
-                
-                Please generate a helpful movie recommendation response using the memories.
-                """
-
-                print(f"🔍 DEBUG calling use_llm with prompt")
-
-                try:
-                    response = self.agent.tool.use_llm(
-                        prompt=prompt,
-                        system_prompt="Generate movie recommendations based on stored user preferences.",
-                    )
-                    print(f"🔍 DEBUG use_llm response: {response}")
-
-                    # Extract content from response
-                    if isinstance(response, dict) and "content" in response:
-                        return str(response["content"][0]["text"])
-                    else:
-                        return str(response)
-
-                except Exception as e:
-                    print(f"❌ ERROR with use_llm: {e}")
-                    return f"Error generating response: {e}"
-            else:
-                return "I don't have specific memories about that yet. Tell me about movies you like so I can give you personalized recommendations!"
-
-        except Exception as e:
-            print(f"❌ ERROR retrieving memories: {e}")
-            return f"Error retrieving memories: {e}"
-
     async def chat(self, message: str) -> str:
-        """Main chat interface"""
-        return self.process_input(message)
+        response = await self.agent(message)
+        return response
 
 
 async def main():
-    """CLI interface following official documentation"""
-    print("🎬 Movie Recommendation Agent - Direct Tool Usage Pattern")
+    print("🎬 Movie Recommendation Agent")
     print("\nExample Interactions:")
     print("> Remember that I love sci-fi movies")
     print("> I didn't like The Matrix")
-    print("> Show me my memories")
-    print("> What movies should I watch?")
     print("\nType 'quit' to exit.\n")
 
     assistant = MemoryAssistant()

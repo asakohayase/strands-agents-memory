@@ -5,7 +5,7 @@ import os
 
 # Add parent directory to path to import movie_database
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from movie_database import MOVIE_DATABASE, get_all_movies
+from movie_database import get_all_movies
 
 
 @tool
@@ -23,11 +23,11 @@ def recommend_movies(
     Returns:
         Dict with personalized movie recommendations
     """
-    # DEBUG: Log all parameters received
-    print(f"🔍 DEBUG recommend_movies called with:")
-    print(f"   user_memories: '{user_memories}'")
-    print(f"   count: {count}")
-    print(f"   genre_filter: '{genre_filter}'")
+    # # DEBUG: Log all parameters received
+    # print(f"🔍 DEBUG recommend_movies called with:")
+    # print(f"   user_memories: '{user_memories}'")
+    # print(f"   count: {count}")
+    # print(f"   genre_filter: '{genre_filter}'")
 
     all_movies = get_all_movies()
 
@@ -39,13 +39,13 @@ def recommend_movies(
             for movie in all_movies
             if any(genre_filter_lower in g.value.lower() for g in movie.genres)
         ]
-        print(f"🔍 DEBUG: Filtered to {len(filtered_movies)} {genre_filter} movies")
-        print(
-            f"🔍 DEBUG: Comedy movies found: {[m.title for m in all_movies if 'comedy' in [g.value for g in m.genres]]}"
-        )
+        # print(f"🔍 DEBUG: Filtered to {len(filtered_movies)} {genre_filter} movies")
+        # print(
+        #     f"🔍 DEBUG: Comedy movies found: {[m.title for m in all_movies if 'comedy' in [g.value for g in m.genres]]}"
+        # )
     else:
         filtered_movies = all_movies
-        print(f"🔍 DEBUG: No genre filter, using all {len(all_movies)} movies")
+        # print(f"🔍 DEBUG: No genre filter, using all {len(all_movies)} movies")
 
     if not user_memories:
         # No preferences stored, return popular movies (filtered by genre if specified)
@@ -74,7 +74,7 @@ def recommend_movies(
             },
         }
 
-        print(f"🔍 DEBUG: Returning {len(result['recommendations'])} recommendations")
+        # print(f"🔍 DEBUG: Returning {len(result['recommendations'])} recommendations")
         return result
 
     # Parse memories to extract preferences

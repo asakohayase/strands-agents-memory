@@ -1,5 +1,5 @@
 from strands import tool
-from typing import Dict, Any, List
+from typing import Dict, Any
 import sys
 import os
 
