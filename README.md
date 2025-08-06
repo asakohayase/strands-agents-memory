@@ -1,4 +1,4 @@
-# Movie Recommendation Assistant
+# Movie Recommendation Assistant 🎥
 
 > A movie recommendation agent showcasing Strands memory capabilities with persistent learning and personalized recommendations.  
 This project demonstrates how to build an AI agent that learns user preferences over time using the Strands Agents SDK and Mem0 memory system.
