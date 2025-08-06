@@ -32,8 +32,57 @@ User preferences and ratings are automatically stored using the `mem0_memory` to
 ### Step 2: Intelligent Recommendations  
 The system analyzes stored memories to generate personalized recommendations using custom scoring algorithms.
 
+## 4. Memory & Recommendation Flow
+The movie recommendation agent uses different tool combinations depending on the user's request. Here are the detailed flows:
 
-## 4. Quick Start
+### Comedy Recommendation Flow
+```text
+User: "recommend comedy movies"
+    ↓
+Strands Agent: Process Query & Plan Reasoning
+    ↓
+Execute Tools: recommend_movies tool
+    ↓
+recommend_movies tool:
+  1. Calls Mem0 Memory (action="retrieve", query="comedy preferences")
+  2. Mem0 internally:
+     - Uses Claude 3.5 Haiku for memory processing
+     - Searches FAISS vector store for relevant memories
+     - Returns user preference data
+  3. Accesses Movie Database (Python data structure)
+  4. Applies scoring algorithm based on:
+     - User's genre preferences from memory
+     - Movie ratings and genres
+     - Preference-based boosts/penalties
+  5. Returns top-rated comedy recommendations
+    ↓
+Strands Agent: Generate Response using recommendations
+```
+
+### Movie Rating Flow
+```text
+User: "I rate Inception 5 stars"
+    ↓
+Strands Agent: Process Query & Plan Reasoning  
+    ↓
+Execute Tools: rate_movie tool
+    ↓
+rate_movie tool:
+  1. Searches Movie Database for "Inception"
+  2. Finds matching movie and any series information
+  3. Creates structured memory content:
+     - "User rated 'Inception' 5/5 stars"
+     - "User liked this movie"
+     - "Genres: sci-fi, thriller"
+     - Genre preference: "User likes sci-fi, thriller movies"
+  4. Calls Mem0 Memory (action="store", content=rating_info)
+  5. Mem0 processes and stores in FAISS vector database
+  6. Returns success confirmation
+    ↓
+Strands Agent: Generate confirmation response
+```
+
+## 5. Quick Start
 
 ### Prerequisites
 
@@ -110,7 +159,7 @@ uv run python main.py
 🤖 Agent: Based on your preferences, here are some comedy recommendations...
 ```
 
-## 5. Core Implementation
+## 6. Core Implementation
 Movie Recommendation Assistant Setup
 ```python
 from strands import Agent
@@ -172,11 +221,11 @@ class Genre(str, Enum):
     DOCUMENTARY = "documentary"
     ANIMATION = "animation"
 ```
-## 6. Links
+## 7. Links
 - Mem0 Memory Agent Official Documentation: https://strandsagents.com/latest/documentation/docs/examples/python/memory_agent/
 - Mem0 Memory Tool Github Repo: https://github.com/strands-agents/tools/blob/main/src/strands_tools/mem0_memory.py
 
-## 7. Contributing
+## 8. Contributing
 
 We welcome contributions! Whether it's a bug fix, new feature, or suggestion for improvement — every bit helps.
 
