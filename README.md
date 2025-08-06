@@ -25,14 +25,6 @@ The system combines Strands Agents with Mem0's memory capabilities:
 
 
 ## 3. Memory & Recommendation Flow
-
-### Step 1: Memory Storage  
-User preferences and ratings are automatically stored using the `mem0_memory` tool with persistent vector embeddings.
-
-### Step 2: Intelligent Recommendations  
-The system analyzes stored memories to generate personalized recommendations using custom scoring algorithms.
-
-## 4. Memory & Recommendation Flow
 The movie recommendation agent uses different tool combinations depending on the user's request. Here are the detailed flows:
 
 ### Comedy Recommendation Flow
@@ -82,7 +74,7 @@ rate_movie tool:
 Strands Agent: Generate confirmation response
 ```
 
-## 5. Quick Start
+## 4. Quick Start
 
 ### Prerequisites
 
@@ -159,7 +151,7 @@ uv run python main.py
 🤖 Agent: Based on your preferences, here are some comedy recommendations...
 ```
 
-## 6. Core Implementation
+## 5. Core Implementation
 Movie Recommendation Assistant Setup
 ```python
 from strands import Agent
@@ -221,11 +213,11 @@ class Genre(str, Enum):
     DOCUMENTARY = "documentary"
     ANIMATION = "animation"
 ```
-## 7. Links
+## 6. Links
 - Mem0 Memory Agent Official Documentation: https://strandsagents.com/latest/documentation/docs/examples/python/memory_agent/
 - Mem0 Memory Tool Github Repo: https://github.com/strands-agents/tools/blob/main/src/strands_tools/mem0_memory.py
 
-## 8. Contributing
+## 7. Contributing
 
 We welcome contributions! Whether it's a bug fix, new feature, or suggestion for improvement — every bit helps.
 
