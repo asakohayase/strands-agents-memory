@@ -14,6 +14,8 @@ This project demonstrates how to build an AI agent that learns user preferences 
 
 ## 2. Architecture
 
+<img width="836" height="432" alt="Image" src="https://github.com/user-attachments/assets/bb776cfa-37b8-4e5b-8cfd-802d5dc78459" />
+
 The system combines Strands Agents with Mem0's memory capabilities:
 
 - **Strands Agent**: Core conversational AI with tool integration  
