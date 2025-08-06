@@ -17,7 +17,8 @@ This project demonstrates how to build an AI agent that learns user preferences 
 The system combines Strands Agents with Mem0's memory capabilities:
 
 - **Strands Agent**: Core conversational AI with tool integration  
-- **Mem0 Memory**: Persistent storage and retrieval of user preferences  
+- **Mem0 Memory**: Memory operations (store, retrieve) and preference extraction
+- **FAISS Vector Database**: Local persistent storage for memory embeddings 
 - **Custom Tools**: Specialized movie rating and recommendation tools  
 - **Movie Database**: Curated collection of movies with genres and series information  
 - **Amazon Bedrock**: Claude 3.7 Sonnet model for natural language understanding  
@@ -50,7 +51,10 @@ Go to [aws.amazon.com](https://aws.amazon.com) and create an account.
 
 - Navigate to **Amazon Bedrock** in the AWS Console  
 - Go to **Model access**
-- Request access to **Claude 3.7 Sonnet** model  
+- Request access to the following models:
+  - Claude 3.7 Sonnet (us.anthropic.claude-3-7-sonnet-20250219-v1:0) - Used by your main agent
+  - Claude 3.5 Haiku (anthropic.claude-3-5-haiku-20241022-v1:0) - Used by Mem0 for fast fact extraction
+  - Amazon Titan Text Embeddings v2 (amazon.titan-embed-text-v2:0) - Used by Mem0 for vector embeddings 
 - Wait for approval (usually instant for most accounts)
 
 #### 3. Create IAM User with Bedrock Permissions
@@ -170,6 +174,7 @@ class Genre(str, Enum):
 ```
 ## 6. Links
 - Mem0 Memory Agent Official Documentation: https://strandsagents.com/latest/documentation/docs/examples/python/memory_agent/
+- Mem0 Memory Tool Github Repo: https://github.com/strands-agents/tools/blob/main/src/strands_tools/mem0_memory.py
 
 ## 7. Contributing
 
