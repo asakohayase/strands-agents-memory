@@ -69,8 +69,8 @@ class MovieRecommendationAssistant:
         except Exception:
             pass
 
-    async def chat(self, message: str) -> str:
-        response = await self.agent(message)
+    def chat(self, message: str) -> str:
+        response = self.agent(message)
         return response
 
 
@@ -95,7 +95,7 @@ async def main():
                 continue
 
             print("🤖 Agent: ", end="", flush=True)
-            response = await assistant.chat(user_input)
+            response = assistant.chat(user_input)
             print(response)
             print()
 
