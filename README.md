@@ -1,11 +1,11 @@
-# 🎬 Movie Recommendation Assistant
+# Movie Recommendation Assistant
 
 > A movie recommendation agent showcasing Strands memory capabilities with persistent learning and personalized recommendations.  
 This project demonstrates how to build an AI agent that learns user preferences over time using the Strands Agents SDK and Mem0 memory system.
 
 ---
 
-## 🌟 Features
+## Features
 
 - **Persistent Memory**: Learns and remembers user preferences across conversations  
 - **Personalized Recommendations**: Tailored movie suggestions based on stored preferences  
@@ -16,7 +16,7 @@ This project demonstrates how to build an AI agent that learns user preferences 
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 The system combines Strands Agents with Mem0's memory capabilities:
 
@@ -28,7 +28,7 @@ The system combines Strands Agents with Mem0's memory capabilities:
 
 ---
 
-## 🧠 Memory & Recommendation Flow
+## Memory & Recommendation Flow
 
 ### Step 1: Memory Storage  
 User preferences and ratings are automatically stored using the `mem0_memory` tool with persistent vector embeddings.
@@ -38,7 +38,7 @@ The system analyzes stored memories to generate personalized recommendations usi
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -177,7 +177,7 @@ class Genre(str, Enum):
 ```
 
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Whether it's a bug fix, new feature, or suggestion for improvement — every bit helps.
 
