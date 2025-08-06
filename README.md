@@ -3,7 +3,6 @@
 > A movie recommendation agent showcasing Strands memory capabilities with persistent learning and personalized recommendations.  
 This project demonstrates how to build an AI agent that learns user preferences over time using the Strands Agents SDK and Mem0 memory system.
 
----
 
 ## Features
 
@@ -12,8 +11,6 @@ This project demonstrates how to build an AI agent that learns user preferences 
 - **Natural Language Processing**: Understands expressions like “I didn’t like Matrix” or “I loved Inception”  
 - **Genre Intelligence**: Maps user requests to available genres and learns preferences  
 - **Series Awareness**: Automatically applies ratings to entire movie series when applicable  
-
----
 
 ## Architecture
 
@@ -25,7 +22,6 @@ The system combines Strands Agents with Mem0's memory capabilities:
 - **Movie Database**: Curated collection of movies with genres and series information  
 - **Amazon Bedrock**: Claude 3.7 Sonnet model for natural language understanding  
 
----
 
 ## Memory & Recommendation Flow
 
@@ -35,7 +31,6 @@ User preferences and ratings are automatically stored using the `mem0_memory` to
 ### Step 2: Intelligent Recommendations  
 The system analyzes stored memories to generate personalized recommendations using custom scoring algorithms.
 
----
 
 ## Quick Start
 
@@ -45,7 +40,6 @@ The system analyzes stored memories to generate personalized recommendations usi
 - AWS account with Bedrock access (see setup below)  
 - *(Optional)* API keys for cloud memory backends (Qdrant, OpenSearch)  
 
----
 
 ### AWS Bedrock Setup
 
