@@ -49,7 +49,7 @@ bedrock_model = BedrockModel(
 )
 
 
-class MemoryAssistant:
+class MovieRecommendationAssistant:
     """Movie recommendation assistant following official Strands memory pattern"""
 
     def __init__(self, user_id: str = USER_ID):
@@ -88,7 +88,7 @@ async def main():
     print("> I didn't like The Matrix")
     print("\nType 'quit' to exit.\n")
 
-    assistant = MemoryAssistant()
+    assistant = MovieRecommendationAssistant()
 
     while True:
         try:
