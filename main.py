@@ -1,7 +1,5 @@
 import asyncio
-import boto3
 
-from strands.models import BedrockModel
 from strands import Agent
 from strands_tools import mem0_memory, use_llm
 
@@ -41,14 +39,6 @@ Use the tools:
 - recommend_movies: Generate ALL recommendations (present results directly, no additional commentary)
 """
 
-# Configure Amazon Bedrock
-session = boto3.Session(region_name="us-west-2")
-bedrock_model = BedrockModel(
-    model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-    boto_session=session,
-    streaming=False,
-)
-
 
 class MovieRecommendationAssistant:
     """Movie recommendation assistant following official Strands memory pattern"""
@@ -59,7 +49,6 @@ class MovieRecommendationAssistant:
             system_prompt=SYSTEM_PROMPT,
             tools=[mem0_memory, use_llm],
             load_tools_from_directory=True,
-            model=bedrock_model,
         )
 
         try:
