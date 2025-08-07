@@ -215,6 +215,7 @@ class Genre(str, Enum):
     ANIMATION = "animation"
 ```
 ## 6. Links
+- YouTube Tutorial: https://www.youtube.com/watch?v=m0sRdeM9RZE
 - Mem0 Memory Agent Official Documentation: https://strandsagents.com/latest/documentation/docs/examples/python/memory_agent/
 - Mem0 Memory Tool Github Repo: https://github.com/strands-agents/tools/blob/main/src/strands_tools/mem0_memory.py
 
