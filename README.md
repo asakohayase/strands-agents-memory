@@ -23,7 +23,7 @@ The system combines Strands Agents with Mem0's memory capabilities:
 - **FAISS Vector Database**: Local persistent storage for memory embeddings 
 - **Custom Tools**: Specialized movie rating and recommendation tools  
 - **Movie Database**: Curated collection of movies with genres and series information  
-- **Amazon Bedrock**: Multiple Claude models - Claude 3.7 Sonnet (main agent), Claude 3.5 Haiku (memory processing), and Titan Text v2 (embeddings) 
+- **Amazon Bedrock**: Multiple Claude models - Claude 4 Sonnet (main agent), Claude 3.5 Haiku (memory processing), and Titan Text v2 (embeddings) 
 
 
 ## 3. Memory & Recommendation Flow
@@ -95,9 +95,9 @@ Go to [aws.amazon.com](https://aws.amazon.com) and create an account.
 - Navigate to **Amazon Bedrock** in the AWS Console  
 - Go to **Model access**
 - Request access to the following models:
-  - Claude 3.7 Sonnet (us.anthropic.claude-3-7-sonnet-20250219-v1:0) - Used by your main agent
-  - Claude 3.5 Haiku (anthropic.claude-3-5-haiku-20241022-v1:0) - Used by Mem0 for fast fact extraction
-  - Amazon Titan Text Embeddings v2 (amazon.titan-embed-text-v2:0) - Used by Mem0 for vector embeddings 
+  - Claude 4 Sonnet - Used by your main agent
+  - Claude 3.5 Haiku - Used by Mem0 for fast fact extraction
+  - Amazon Titan Text Embeddings v2 - Used by Mem0 for vector embeddings 
 - Wait for approval (usually instant for most accounts)
 
 #### 3. Create IAM User with Bedrock Permissions
@@ -160,12 +160,11 @@ from strands import Agent
 from strands_tools import mem0_memory, use_llm
 
 class MovieRecommendationAssistant:
-    def __init__(self, user_id: str = "demo_user"):
+    def __init__(self, user_id: str = "demo_user1"):
         self.agent = Agent(
             system_prompt=SYSTEM_PROMPT,
             tools=[mem0_memory, use_llm],
             load_tools_from_directory=True,
-            model=bedrock_model,
         )
 ```
 Rate Movie Tool
