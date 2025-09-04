@@ -11,3 +11,12 @@ Requires-Dist: qdrant-client>=1.15.1
 Requires-Dist: sentence-transformers>=5.0.0
 Requires-Dist: faiss-cpu>=1.11.0.post1
 Requires-Dist: numpy>=1.26.0
+Requires-Dist: langfuse>=3.3.0
+Requires-Dist: ragas>=0.3.2
+Requires-Dist: datasets>=2.0.0
+Requires-Dist: pandas>=2.3.2
+Requires-Dist: python-dotenv>=1.1.1
+Requires-Dist: pyarrow>=15.0.0
+Requires-Dist: arize-phoenix
+Requires-Dist: arize-otel>=0.10.0
+Requires-Dist: openinference-instrumentation-bedrock>=0.1.27

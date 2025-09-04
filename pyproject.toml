@@ -12,6 +12,15 @@ dependencies = [
     "sentence-transformers>=5.0.0",
     "faiss-cpu>=1.11.0.post1",
     "numpy>=1.26.0",
+    "langfuse>=3.3.0",
+    "ragas>=0.3.2",
+    "datasets>=2.0.0",
+    "pandas>=2.3.2",
+    "python-dotenv>=1.1.1",
+    "pyarrow>=15.0.0",
+    "arize-phoenix",
+    "arize-otel>=0.10.0",
+    "openinference-instrumentation-bedrock>=0.1.27",
 ]
 
 [build-system]
