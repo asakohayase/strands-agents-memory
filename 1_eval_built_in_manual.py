@@ -1,8 +1,13 @@
 """
-eval_built_in.py - Strands Built-in Metrics Demo
+1_eval_built_in_manual.py - Strands Built-in Metrics Demo
 """
 
+import json
+from dotenv import load_dotenv
 from main import MovieRecommendationAssistant
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def reset_memory(assistant):
@@ -51,12 +56,30 @@ def demonstrate_strands_builtin():
 
     assistant = MovieRecommendationAssistant()
 
-    reset_memory(assistant)
+    # Load scenarios from JSON file instead of hardcoded queries
+    with open("movie_evaluation_scenarios.json", "r") as f:
+        scenarios = json.load(f)
 
-    # Test queries
-    queries = ["I love Spirited Away", "5", "Recommend movies"]
+    for scenario in scenarios:
+        if scenario.get("reset_memory", False):
+            reset_memory(assistant)
 
-    for query in queries:
+        # Run this scenario's steps
+        for step in scenario["steps"]:
+            query = step["user"]
+            print(f"Query: {query}")
+            result = assistant.agent(query)
+
+            # Show the basic metrics you wanted
+            print()
+            print("-" * 40)
+            print(f"Total tokens: {result.metrics.accumulated_usage['totalTokens']}")
+            print(f"Execution time: {sum(result.metrics.cycle_durations):.2f} seconds")
+            print(f"Tools used: {list(result.metrics.tool_metrics.keys())}")
+            print("-" * 40)
+
+        # Then run the evaluation query
+        query = scenario["evaluation_query"]
         print(f"Query: {query}")
         result = assistant.agent(query)
 
