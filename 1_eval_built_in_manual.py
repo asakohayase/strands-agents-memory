@@ -1,7 +1,3 @@
-"""
-1_eval_built_in_manual.py - Strands Built-in Metrics Demo
-"""
-
 import json
 from dotenv import load_dotenv
 from main import MovieRecommendationAssistant

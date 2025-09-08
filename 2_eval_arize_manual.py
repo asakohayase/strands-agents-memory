@@ -1,11 +1,12 @@
 """
-eval_arize_synthetic.py - Arize AX with Synthetic Data
+eval_arize_synthetic.py - Arize AX with Synthetic Data using JSON Test Dataset
 
-Runs synthetic movie scenarios aligned with eval_built_in.py
+Runs synthetic movie scenarios using movie_evaluation_scenarios.json
 Setup: uv add arize-otel openinference-instrumentation-bedrock python-dotenv
 """
 
 import os
+import json
 from dotenv import load_dotenv
 from main import MovieRecommendationAssistant
 
@@ -27,8 +28,6 @@ except ImportError:
 
 def reset_memory(assistant):
     """Clear all stored memories for clean testing"""
-    import json
-
     try:
         memories_result = assistant.agent.tool.mem0_memory(
             action="list", user_id=assistant.user_id
@@ -66,8 +65,8 @@ def reset_memory(assistant):
         print(f"⚠️  Memory reset failed: {e}")
 
 
-def demonstrate_arize_synthetic():
-    """Arize AX with synthetic data matching eval_built_in.py"""
+def demonstrate_arize_manual():
+    """Arize AX with synthetic data using JSON test dataset"""
 
     if not ARIZE_AVAILABLE:
         print("Cannot run - missing arize-otel")
@@ -85,9 +84,9 @@ def demonstrate_arize_synthetic():
     tracer_provider = register(
         space_id=space_id,
         api_key=api_key,
-        project_name="strands-agents-memory-synthetic",  # Separate project for synthetic
+        project_name="strands-agents-memory-manual",  # Separate project for synthetic
     )
-    print("Arize AX synthetic testing registered")
+    print("Arize AX Manual testing registered")
 
     # Add instrumentation AFTER register
     BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
@@ -96,31 +95,49 @@ def demonstrate_arize_synthetic():
     # Create agent (now automatically traced)
     assistant = MovieRecommendationAssistant()
 
-    # Reset memory for clean synthetic testing
-    reset_memory(assistant)
+    # Load test scenarios from JSON file
+    with open("movie_evaluation_scenarios.json", "r") as f:
+        scenarios = json.load(f)
 
-    # Same synthetic test queries as eval_built_in.py
-    queries = ["I love Spirited Away", "5", "Recommend movies"]
+    for scenario in scenarios:
+        print(f"Scenario {scenario['scenario_id']}: {scenario['description']}")
 
-    for query in queries:
-        print(f"Synthetic Query: {query}")
+        # Always reset memory for clean testing
+        reset_memory(assistant)
 
-        # Agent execution automatically traced to Arize
-        response = assistant.agent(query)
+        # Run each step in the scenario
+        for step in scenario["steps"]:
+            query = step["user"]
+            print(f"Query: {query}")
 
-        # Show what's being captured
-        print("Sent to Arize (Synthetic):")
+            # Agent execution automatically traced to Arize
+            response = assistant.agent(query)
+
+            # Show what's being captured
+            print("Sent to Arize:")
+            print(
+                f"  Tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
+            )
+            print(f"  Time: {sum(response.metrics.cycle_durations):.2f}s")
+            print(f"  Tools: {list(response.metrics.tool_metrics.keys())}")
+            print(f"  Full trace: Agent reasoning + tool calls + responses")
+
+        # Run evaluation query
+        eval_query = scenario["evaluation_query"]
+        print(f"Evaluation Query: {eval_query}")
+        response = assistant.agent(eval_query)
+
+        print("Sent to Arize:")
         print(f"  Tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}")
         print(f"  Time: {sum(response.metrics.cycle_durations):.2f}s")
         print(f"  Tools: {list(response.metrics.tool_metrics.keys())}")
-        print(f"  Full trace: Agent reasoning + tool calls + responses")
 
         print()
         print("-" * 40)
 
-    print(f"\nView synthetic traces at: https://app.arize.com")
-    print(f"Project: strands-agents-memory-synthetic")
+    print(f"\nView traces at: https://app.arize.com")
+    print(f"Project: strands-agents-memory-manual")
 
 
 if __name__ == "__main__":
-    demonstrate_arize_synthetic()
+    demonstrate_arize_manual()

@@ -1,7 +1,3 @@
-"""
-1_eval_built_in_llm_as_judge.py - Strands Built-in LLM-as-Judge Evaluation
-"""
-
 import json
 import time
 from dotenv import load_dotenv

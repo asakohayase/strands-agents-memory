@@ -1,13 +1,6 @@
-"""
-eval_langfuse_synthetic.py - LangFuse Dashboard Visualization (No RAGAS)
-
-Following official LangFuse documentation for Strands Agents
-https://langfuse.com/docs/integrations/strands-agents
-"""
-
 import os
 import base64
-import uuid
+import json
 from dotenv import load_dotenv
 from main import MovieRecommendationAssistant
 
@@ -15,7 +8,7 @@ load_dotenv()
 
 
 def setup_langfuse_opentelemetry():
-    """Setup LangFuse with OpenTelemetry following official docs"""
+    """Setup LangFuse"""
 
     # Get LangFuse credentials
     public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
@@ -39,8 +32,6 @@ def setup_langfuse_opentelemetry():
 
 def reset_memory(assistant):
     """Clear all stored memories for clean testing"""
-    import json
-
     try:
         memories_result = assistant.agent.tool.mem0_memory(
             action="list", user_id=assistant.user_id
@@ -75,7 +66,7 @@ def reset_memory(assistant):
 
 
 def demonstrate_langfuse_dashboard():
-    """LangFuse dashboard visualization with synthetic data"""
+    """LangFuse dashboard visualization with JSON test dataset"""
 
     if not setup_langfuse_opentelemetry():
         return
@@ -84,7 +75,7 @@ def demonstrate_langfuse_dashboard():
         from strands.telemetry import StrandsTelemetry
 
         # Configure the telemetry (creates new tracer provider and sets it as global)
-        strands_telemetry = StrandsTelemetry().setup_otlp_exporter()
+        StrandsTelemetry().setup_otlp_exporter()
         print("✅ LangFuse OpenTelemetry integration active")
 
     except ImportError:
@@ -95,9 +86,6 @@ def demonstrate_langfuse_dashboard():
 
     # Create agent with trace attributes for LangFuse dashboard
     assistant = MovieRecommendationAssistant()
-
-    # Reset memory for clean testing
-    reset_memory(assistant)
 
     # Add trace attributes that appear in LangFuse dashboard
     assistant.agent.trace_attributes = {
@@ -110,31 +98,31 @@ def demonstrate_langfuse_dashboard():
         ],
     }
 
-    # Synthetic test queries (same as eval_built_in.py)
-    queries = ["I love Spirited Away", "5", "Recommend movies"]
+    # Load test scenarios from JSON file
+    with open("movie_evaluation_scenarios.json", "r") as f:
+        scenarios = json.load(f)
 
-    print("🎬 Running synthetic movie scenarios...")
+    print("🎬 Running manual movie scenarios...")
     print("All interactions will appear in your LangFuse dashboard\n")
 
-    for i, query in enumerate(queries, 1):
-        print(f"Scenario {i}: {query}")
+    for scenario in scenarios:
+        print(f"Scenario {scenario['scenario_id']}: {scenario['description']}")
 
-        # Agent execution automatically traced to LangFuse via OpenTelemetry
-        response = assistant.agent(query)
+        # Always reset memory for clean testing
+        reset_memory(assistant)
 
-        print("📊 Captured in LangFuse Dashboard:")
-        print(f"  ├─ Session ID: synthetic-eval-session-123")
-        print(f"  ├─ User ID: synthetic-eval-user@example.com")
-        print(f"  ├─ Tags: Synthetic-Data, Movie-Agent-Demo")
-        print(
-            f"  ├─ Tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
-        )
-        print(f"  ├─ Response Time: {sum(response.metrics.cycle_durations):.2f}s")
-        print(f"  ├─ Tools Used: {', '.join(response.metrics.tool_metrics.keys())}")
-        print(f"  └─ Full conversation trace with tool execution details")
+        # Run each step in the scenario
+        for step in scenario["steps"]:
+            query = step["user"]
+            print(f"Query: {query}")
+            response = assistant.agent(query)
 
+        # Run evaluation query
+        eval_query = scenario["evaluation_query"]
+        print(f"Evaluation Query: {eval_query}")
+        response = assistant.agent(eval_query)
         print(f"Agent Response: {response.message}")
-        print("-" * 60)
+        print("-" * 40)
 
     print("\n🎯 What you can see in LangFuse Dashboard:")
     print("✅ Complete conversation traces for each scenario")
