@@ -1,7 +1,6 @@
 [
   {
     "scenario_id": 1,
-    "reset_memory": true,
     "description": "Positive title preference",
     "steps": [
       {"user": "I love Spirited Away", "expected_memory": "Store anime, fantasy, drama preference"},
@@ -13,7 +12,6 @@
   },
   {
     "scenario_id": 2,
-    "reset_memory": true,
     "description": "Negative title preference and avoidance",
     "steps": [
       {"user": "I didn't like The Matrix", "expected_memory": "Store dislike for sci-fi action"},
@@ -25,7 +23,6 @@
   },
   {
     "scenario_id": 3,
-    "reset_memory": true,
     "description": "Positive genre preference", 
     "steps": [
       {"user": "I love comedies, especially romantic ones", "expected_memory": "Store comedy and romantic comedy preference"},
