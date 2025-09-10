@@ -1,104 +1,10 @@
 import json
-import time
+import uuid
 from dotenv import load_dotenv
 from main import MovieRecommendationAssistant
 from strands import Agent
 
 load_dotenv()
-
-
-def reset_memory(assistant):
-    """Clear all stored memories for clean testing and verify success"""
-    import json
-    import time
-
-    try:
-        print("Starting memory reset...")
-
-        # Step 1: List existing memories
-        memories_result = assistant.agent.tool.mem0_memory(
-            action="list", user_id=assistant.user_id
-        )
-
-        if (
-            memories_result.get("status") == "success"
-            and memories_result.get("content")
-            and len(memories_result["content"]) > 0
-        ):
-            # Parse the JSON string inside content[0]['text']
-            memories_json = memories_result["content"][0]["text"]
-            memories = json.loads(memories_json)
-
-            if memories and len(memories) > 0:
-                print(f"Found {len(memories)} memories to delete")
-
-                # Delete each memory
-                deletion_success = 0
-                for i, memory in enumerate(memories):
-                    try:
-                        delete_result = assistant.agent.tool.mem0_memory(
-                            action="delete",
-                            memory_id=memory["id"],
-                            user_id=assistant.user_id,
-                        )
-                        if delete_result.get("status") == "success":
-                            deletion_success += 1
-                        print(
-                            f"   Deleted memory {i+1}/{len(memories)}: {memory.get('id', 'NO_ID')}"
-                        )
-                    except Exception as e:
-                        print(f"   Failed to delete memory {i+1}: {e}")
-
-                print(
-                    f"Attempted to delete {len(memories)} memories, {deletion_success} reported successful"
-                )
-
-                # Step 2: Wait for deletion to propagate
-                print("Waiting 2 seconds for deletion to propagate...")
-                time.sleep(2)
-
-                # Step 3: Verify deletion by listing again
-                print("Verifying memory reset...")
-                verification_result = assistant.agent.tool.mem0_memory(
-                    action="list", user_id=assistant.user_id
-                )
-
-                if (
-                    verification_result.get("status") == "success"
-                    and verification_result.get("content")
-                    and len(verification_result["content"]) > 0
-                ):
-                    verification_json = verification_result["content"][0]["text"]
-                    remaining_memories = json.loads(verification_json)
-
-                    if remaining_memories and len(remaining_memories) > 0:
-                        print(
-                            f"RESET FAILED: {len(remaining_memories)} memories still exist after deletion!"
-                        )
-                        for mem in remaining_memories:
-                            print(
-                                f"   Still exists: {mem.get('id', 'NO_ID')}: {mem.get('memory', 'No content')[:50]}..."
-                            )
-                        return False
-                    else:
-                        print("RESET SUCCESSFUL: All memories deleted and verified")
-                        return True
-                else:
-                    print("RESET SUCCESSFUL: No memories found in verification")
-                    return True
-            else:
-                print("No memories to delete")
-                return True
-        else:
-            print("No memories found")
-            return True
-
-    except Exception as e:
-        print(f"Memory reset failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return False
 
 
 def create_evaluator():
@@ -183,7 +89,6 @@ def evaluate_response(evaluator, scenario, response):
 def demonstrate_strands_llm_as_judge():
     """Show Strands built-in LLM-as-Judge evaluation"""
 
-    assistant = MovieRecommendationAssistant()
     evaluator = create_evaluator()
 
     with open("movie_evaluation_scenarios.json", "r") as f:
@@ -191,46 +96,35 @@ def demonstrate_strands_llm_as_judge():
 
     results = []
 
-    print("Starting LLM-as-Judge Evaluation")
-    print("=" * 50)
-
     for scenario in scenarios:
-        print(f"\nScenario {scenario['scenario_id']}: {scenario['description']}")
+        print(f"\n{'='*60}")
+        print(f"SCENARIO {scenario['scenario_id']}: {scenario['description']}")
+        print(f"{'='*60}")
 
-        reset_success = True
-        if scenario.get("reset_memory", False):
-            print("Resetting memory for clean scenario...")
-            reset_success = reset_memory(assistant)
+        # Create fresh assistant with unique UUID for each scenario
+        user_id = str(uuid.uuid4())
+        assistant = MovieRecommendationAssistant(user_id=user_id)
 
-            if not reset_success:
-                print(
-                    "Memory reset failed - continuing anyway but results may be invalid"
-                )
-            else:
-                print("Memory reset confirmed successful")
+        print(f"Using user_id: {user_id}")
 
-            print("Additional 1 second wait after reset...")
-            time.sleep(1)
-
-        print("Running scenario setup steps...")
+        # Run this scenario's steps
         for step in scenario["steps"]:
-            print(f"   Running: {step['user']}")
-            try:
-                step_result = assistant.agent(step["user"])
-                print(f"   Completed")
-            except Exception as e:
-                print(f"   Failed: {e}")
+            query = step["user"]
+            print(f"\nQuery: {query}")
+            result = assistant.agent(query)
 
+        # Run the evaluation query
         query = scenario["evaluation_query"]
-        print(f"Evaluation Query: {query}")
+        print(f"\nEvaluation Query: {query}")
         result = assistant.agent(query)
 
-        print("Evaluating response...")
+        print("\nEvaluating response with LLM-as-Judge...")
         evaluation = evaluate_response(evaluator, scenario, result.message)
 
         scenario_result = {
             "scenario_id": scenario["scenario_id"],
             "description": scenario["description"],
+            "user_id": user_id,
             "query": query,
             "response": result.message,
             "tokens": result.metrics.accumulated_usage["totalTokens"],
@@ -240,35 +134,29 @@ def demonstrate_strands_llm_as_judge():
             "quality_score": evaluation["quality_score"],
             "memory_explanation": evaluation["memory_explanation"],
             "quality_explanation": evaluation["quality_explanation"],
-            "reset_successful": reset_success,
         }
         results.append(scenario_result)
 
+        # LLM-as-a-Judge specific metrics
+        print()
+        print("-" * 40)
+        print("LLM-as-a-Judge Evaluation Results:")
         print(
             f"Memory Score: {evaluation['memory_score']}/5 - {evaluation['memory_explanation']}"
         )
         print(
             f"Quality Score: {evaluation['quality_score']}/5 - {evaluation['quality_explanation']}"
         )
-        print(f"Tokens: {result.metrics.accumulated_usage['totalTokens']}")
-        print(f"Time: {sum(result.metrics.cycle_durations):.2f}s")
+        print(f"Total tokens: {result.metrics.accumulated_usage['totalTokens']}")
+        print(f"Execution time: {sum(result.metrics.cycle_durations):.2f} seconds")
+        print(f"Tools used: {list(result.metrics.tool_metrics.keys())}")
+        print("-" * 40)
 
-    print("\n" + "=" * 50)
-    print("EVALUATION SUMMARY")
-    print("=" * 50)
+    print(f"\n{'='*60}")
+    print("LLM-AS-A-JUDGE EVALUATION SUMMARY")
+    print(f"{'='*60}")
 
     if results:
-        reset_failures = [r for r in results if not r.get("reset_successful", True)]
-        if reset_failures:
-            print(
-                f"WARNING: {len(reset_failures)} scenarios had memory reset failures:"
-            )
-            for failure in reset_failures:
-                print(
-                    f"   - Scenario {failure['scenario_id']}: {failure['description']}"
-                )
-            print()
-
         avg_memory = sum(r["memory_score"] for r in results) / len(results)
         avg_quality = sum(r["quality_score"] for r in results) / len(results)
         total_tokens = sum(r["tokens"] for r in results)
@@ -281,14 +169,9 @@ def demonstrate_strands_llm_as_judge():
 
         print("\nIndividual Results:")
         for result in results:
-            reset_status = "✅" if result.get("reset_successful", True) else "❌"
             print(
-                f"   {reset_status} Scenario {result['scenario_id']}: Memory {result['memory_score']}/5, Quality {result['quality_score']}/5"
+                f"   Scenario {result['scenario_id']}: Memory {result['memory_score']}/5, Quality {result['quality_score']}/5"
             )
-
-        with open("evaluation_results.json", "w") as f:
-            json.dump(results, f, indent=2)
-        print("\nResults saved to evaluation_results.json")
 
     return results
 
