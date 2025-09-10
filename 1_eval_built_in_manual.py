@@ -1,64 +1,35 @@
 import json
+import uuid
 from dotenv import load_dotenv
 from main import MovieRecommendationAssistant
+from strands.agent.conversation_manager import SlidingWindowConversationManager
 
 # Load environment variables from .env file
 load_dotenv()
 
 
-def reset_memory(assistant):
-    """Clear all stored memories for clean testing"""
-    import json
-
-    try:
-        memories_result = assistant.agent.tool.mem0_memory(
-            action="list", user_id=assistant.user_id
-        )
-
-        # Extract the JSON string from the nested structure
-        if (
-            memories_result.get("status") == "success"
-            and memories_result.get("content")
-            and len(memories_result["content"]) > 0
-        ):
-
-            # Parse the JSON string inside content[0]['text']
-            memories_json = memories_result["content"][0]["text"]
-            memories = json.loads(memories_json)
-
-            if memories and len(memories) > 0:
-                print(f"🔍 Found {len(memories)} memories to delete")
-
-                # Delete each memory
-                for memory in memories:
-                    assistant.agent.tool.mem0_memory(
-                        action="delete",
-                        memory_id=memory["id"],
-                        user_id=assistant.user_id,
-                    )
-
-                print(f"✅ Deleted {len(memories)} memories")
-            else:
-                print("✅ No memories to delete")
-        else:
-            print("✅ No memories found")
-
-    except Exception as e:
-        print(f"⚠️  Memory reset failed: {e}")
-
-
 def demonstrate_strands_builtin():
-    """Show basic Strands built-in metrics"""
+    """Show basic Strands built-in metrics with isolated scenarios"""
 
-    assistant = MovieRecommendationAssistant()
+    conversation_manager = SlidingWindowConversationManager(
+        should_truncate_results=False  # This will show the full tool result
+    )
 
-    # Load scenarios from JSON file instead of hardcoded queries
+    # Load scenarios from JSON file
     with open("movie_evaluation_scenarios.json", "r") as f:
         scenarios = json.load(f)
 
     for scenario in scenarios:
-        if scenario.get("reset_memory", False):
-            reset_memory(assistant)
+        print(f"\n{'='*60}")
+        print(f"SCENARIO {scenario['scenario_id']}: {scenario['description']}")
+        print(f"{'='*60}")
+
+        # Create fresh assistant with unique UUID for each scenario
+        user_id = str(uuid.uuid4())
+        assistant = MovieRecommendationAssistant(user_id=user_id)
+        assistant.agent.conversation_manager = conversation_manager
+
+        print(f"Using user_id: {user_id}")
 
         # Run this scenario's steps
         for step in scenario["steps"]:
@@ -66,7 +37,7 @@ def demonstrate_strands_builtin():
             print(f"Query: {query}")
             result = assistant.agent(query)
 
-            # Show the basic metrics you wanted
+            # Show the basic metrics
             print()
             print("-" * 40)
             print(f"Total tokens: {result.metrics.accumulated_usage['totalTokens']}")
@@ -74,12 +45,12 @@ def demonstrate_strands_builtin():
             print(f"Tools used: {list(result.metrics.tool_metrics.keys())}")
             print("-" * 40)
 
-        # Then run the evaluation query
+        # Run the evaluation query
         query = scenario["evaluation_query"]
         print(f"Query: {query}")
         result = assistant.agent(query)
 
-        # Show the basic metrics you wanted
+        # Show the basic metrics
         print()
         print("-" * 40)
         print(f"Total tokens: {result.metrics.accumulated_usage['totalTokens']}")

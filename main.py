@@ -2,9 +2,7 @@ import asyncio
 
 from strands import Agent
 from strands_tools import mem0_memory, use_llm
-
-
-USER_ID = "user_1"
+from uuid import uuid4 as uuid
 
 
 SYSTEM_PROMPT = """You are a movie recommendation assistant that learns user preferences over time.
@@ -43,8 +41,8 @@ Use the tools:
 class MovieRecommendationAssistant:
     """Movie recommendation assistant following official Strands memory pattern"""
 
-    def __init__(self, user_id: str = USER_ID):
-        self.user_id = user_id
+    def __init__(self, user_id: str = None):
+        self.user_id = user_id or str(uuid.uuid4())
         self.agent = Agent(
             system_prompt=SYSTEM_PROMPT,
             tools=[mem0_memory, use_llm],
