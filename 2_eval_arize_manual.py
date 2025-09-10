@@ -1,12 +1,6 @@
-"""
-eval_arize_synthetic.py - Arize AX with Synthetic Data using JSON Test Dataset
-
-Runs synthetic movie scenarios using movie_evaluation_scenarios.json
-Setup: uv add arize-otel openinference-instrumentation-bedrock python-dotenv
-"""
-
 import os
 import json
+import uuid
 from dotenv import load_dotenv
 from main import MovieRecommendationAssistant
 
@@ -24,45 +18,6 @@ except ImportError:
     print(
         "Install: uv add arize-otel openinference-instrumentation-bedrock python-dotenv"
     )
-
-
-def reset_memory(assistant):
-    """Clear all stored memories for clean testing"""
-    try:
-        memories_result = assistant.agent.tool.mem0_memory(
-            action="list", user_id=assistant.user_id
-        )
-
-        # Extract the JSON string from the nested structure
-        if (
-            memories_result.get("status") == "success"
-            and memories_result.get("content")
-            and len(memories_result["content"]) > 0
-        ):
-
-            # Parse the JSON string inside content[0]['text']
-            memories_json = memories_result["content"][0]["text"]
-            memories = json.loads(memories_json)
-
-            if memories and len(memories) > 0:
-                print(f"🔍 Found {len(memories)} memories to delete")
-
-                # Delete each memory
-                for memory in memories:
-                    assistant.agent.tool.mem0_memory(
-                        action="delete",
-                        memory_id=memory["id"],
-                        user_id=assistant.user_id,
-                    )
-
-                print(f"✅ Deleted {len(memories)} memories")
-            else:
-                print("✅ No memories to delete")
-        else:
-            print("✅ No memories found")
-
-    except Exception as e:
-        print(f"⚠️  Memory reset failed: {e}")
 
 
 def demonstrate_arize_manual():
@@ -84,55 +39,62 @@ def demonstrate_arize_manual():
     tracer_provider = register(
         space_id=space_id,
         api_key=api_key,
-        project_name="strands-agents-memory-manual",  # Separate project for synthetic
+        project_name="strands-agents-memory-manual",
     )
-    print("Arize AX Manual testing registered")
+    print("Arize AX built_in_manual testing registered")
 
     # Add instrumentation AFTER register
     BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
     print("Bedrock instrumentation enabled")
-
-    # Create agent (now automatically traced)
-    assistant = MovieRecommendationAssistant()
 
     # Load test scenarios from JSON file
     with open("movie_evaluation_scenarios.json", "r") as f:
         scenarios = json.load(f)
 
     for scenario in scenarios:
-        print(f"Scenario {scenario['scenario_id']}: {scenario['description']}")
+        print(f"\n{'='*60}")
+        print(f"SCENARIO {scenario['scenario_id']}: {scenario['description']}")
+        print(f"{'='*60}")
 
-        # Always reset memory for clean testing
-        reset_memory(assistant)
+        # Create fresh assistant with unique UUID for each scenario
+        user_id = str(uuid.uuid4())
+        assistant = MovieRecommendationAssistant(user_id=user_id)
+
+        print(f"Using user_id: {user_id}")
 
         # Run each step in the scenario
         for step in scenario["steps"]:
             query = step["user"]
-            print(f"Query: {query}")
+            print(f"\nQuery: {query}")
 
             # Agent execution automatically traced to Arize
             response = assistant.agent(query)
 
-            # Show what's being captured
-            print("Sent to Arize:")
+            # Show metrics - consistent with built_in_manual format
+            print()
+            print("-" * 40)
             print(
-                f"  Tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
+                f"Total tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
             )
-            print(f"  Time: {sum(response.metrics.cycle_durations):.2f}s")
-            print(f"  Tools: {list(response.metrics.tool_metrics.keys())}")
-            print(f"  Full trace: Agent reasoning + tool calls + responses")
+            print(
+                f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds"
+            )
+            print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
+            print("-" * 40)
 
         # Run evaluation query
         eval_query = scenario["evaluation_query"]
-        print(f"Evaluation Query: {eval_query}")
+        print(f"\nQuery: {eval_query}")
         response = assistant.agent(eval_query)
 
-        print("Sent to Arize:")
-        print(f"  Tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}")
-        print(f"  Time: {sum(response.metrics.cycle_durations):.2f}s")
-        print(f"  Tools: {list(response.metrics.tool_metrics.keys())}")
-
+        # Show metrics - consistent with built_in_manual format
         print()
+        print("-" * 40)
+        print(
+            f"Total tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
+        )
+        print(f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds")
+        print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
         print("-" * 40)
 
     print(f"\nView traces at: https://app.arize.com")
