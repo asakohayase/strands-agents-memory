@@ -1,6 +1,7 @@
 import os
 import base64
 import json
+import uuid
 from dotenv import load_dotenv
 from main import MovieRecommendationAssistant
 
@@ -30,42 +31,7 @@ def setup_langfuse_opentelemetry():
     return True
 
 
-def reset_memory(assistant):
-    """Clear all stored memories for clean testing"""
-    try:
-        memories_result = assistant.agent.tool.mem0_memory(
-            action="list", user_id=assistant.user_id
-        )
-
-        if (
-            memories_result.get("status") == "success"
-            and memories_result.get("content")
-            and len(memories_result["content"]) > 0
-        ):
-            memories_json = memories_result["content"][0]["text"]
-            memories = json.loads(memories_json)
-
-            if memories and len(memories) > 0:
-                print(f"🔍 Found {len(memories)} memories to delete")
-
-                for memory in memories:
-                    assistant.agent.tool.mem0_memory(
-                        action="delete",
-                        memory_id=memory["id"],
-                        user_id=assistant.user_id,
-                    )
-
-                print(f"✅ Deleted {len(memories)} memories")
-            else:
-                print("✅ No memories to delete")
-        else:
-            print("✅ No memories found")
-
-    except Exception as e:
-        print(f"⚠️  Memory reset failed: {e}")
-
-
-def demonstrate_langfuse_dashboard():
+def demonstrate_langfuse_manual():
     """LangFuse dashboard visualization with JSON test dataset"""
 
     if not setup_langfuse_opentelemetry():
@@ -76,27 +42,13 @@ def demonstrate_langfuse_dashboard():
 
         # Configure the telemetry (creates new tracer provider and sets it as global)
         StrandsTelemetry().setup_otlp_exporter()
-        print("✅ LangFuse OpenTelemetry integration active")
+        print("LangFuse manual testing registered")
 
     except ImportError:
         print(
             "❌ Missing strands-agents[otel] - install with: uv add 'strands-agents[otel]'"
         )
         return
-
-    # Create agent with trace attributes for LangFuse dashboard
-    assistant = MovieRecommendationAssistant()
-
-    # Add trace attributes that appear in LangFuse dashboard
-    assistant.agent.trace_attributes = {
-        "session.id": "synthetic-eval-session-123",
-        "user.id": "synthetic-eval-user@example.com",
-        "langfuse.tags": [
-            "Synthetic-Data",
-            "Movie-Agent-Demo",
-            "Dashboard-Visualization",
-        ],
-    }
 
     # Load test scenarios from JSON file
     with open("movie_evaluation_scenarios.json", "r") as f:
@@ -106,46 +58,61 @@ def demonstrate_langfuse_dashboard():
     print("All interactions will appear in your LangFuse dashboard\n")
 
     for scenario in scenarios:
-        print(f"Scenario {scenario['scenario_id']}: {scenario['description']}")
+        print(f"\n{'='*60}")
+        print(f"SCENARIO {scenario['scenario_id']}: {scenario['description']}")
+        print(f"{'='*60}")
 
-        # Always reset memory for clean testing
-        reset_memory(assistant)
+        # Create fresh assistant with unique UUID for each scenario
+        user_id = str(uuid.uuid4())
+        assistant = MovieRecommendationAssistant(user_id=user_id)
+
+        print(f"Using user_id: {user_id}")
+
+        # Add trace attributes that appear in LangFuse dashboard
+        assistant.agent.trace_attributes = {
+            "session.id": f"scenario-{scenario['scenario_id']}-{user_id[:8]}",
+            "user.id": user_id,
+            "langfuse.tags": [
+                "Synthetic-Data",
+                "Movie-Agent-Demo",
+                "Manual-Evaluation",
+                f"Scenario-{scenario['scenario_id']}",
+            ],
+        }
 
         # Run each step in the scenario
         for step in scenario["steps"]:
             query = step["user"]
-            print(f"Query: {query}")
+            print(f"\nQuery: {query}")
             response = assistant.agent(query)
+
+            # Show metrics
+            print()
+            print("-" * 40)
+            print(
+                f"Total tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
+            )
+            print(
+                f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds"
+            )
+            print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
+            print("-" * 40)
 
         # Run evaluation query
         eval_query = scenario["evaluation_query"]
-        print(f"Evaluation Query: {eval_query}")
+        print(f"\nQuery: {eval_query}")
         response = assistant.agent(eval_query)
-        print(f"Agent Response: {response.message}")
+
+        # Show metrics
+        print()
         print("-" * 40)
-
-    print("\n🎯 What you can see in LangFuse Dashboard:")
-    print("✅ Complete conversation traces for each scenario")
-    print("✅ Tool usage breakdown (mem0_memory, rate_movie, recommend_movies)")
-    print("✅ Token consumption and cost tracking")
-    print("✅ Response time analysis")
-    print("✅ Memory operations and retrieval patterns")
-    print("✅ Session grouping and filtering by tags")
-    print("✅ Agent reasoning steps and decision paths")
-
-    print(
-        f"\n🌐 View your traces at: {os.getenv('LANGFUSE_HOST', 'https://cloud.langfuse.com')}"
-    )
-    print("Navigate to: Traces → Filter by session.id or tags")
-
-    print("\n💡 Dashboard Benefits over Built-in Metrics:")
-    print("• Visual timeline of agent execution")
-    print("• Historical data across multiple runs")
-    print("• Team collaboration and sharing")
-    print("• Advanced filtering and search")
-    print("• Cost analysis over time")
-    print("• Memory operation visibility")
+        print(
+            f"Total tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
+        )
+        print(f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds")
+        print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
+        print("-" * 40)
 
 
 if __name__ == "__main__":
-    demonstrate_langfuse_dashboard()
+    demonstrate_langfuse_manual()

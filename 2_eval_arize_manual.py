@@ -41,7 +41,7 @@ def demonstrate_arize_manual():
         api_key=api_key,
         project_name="strands-agents-memory-manual",
     )
-    print("Arize AX built_in_manual testing registered")
+    print("Arize AX manual testing registered")
 
     # Add instrumentation AFTER register
     BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
@@ -70,7 +70,7 @@ def demonstrate_arize_manual():
             # Agent execution automatically traced to Arize
             response = assistant.agent(query)
 
-            # Show metrics - consistent with built_in_manual format
+            # Show metrics
             print()
             print("-" * 40)
             print(
@@ -87,7 +87,7 @@ def demonstrate_arize_manual():
         print(f"\nQuery: {eval_query}")
         response = assistant.agent(eval_query)
 
-        # Show metrics - consistent with built_in_manual format
+        # Show metrics
         print()
         print("-" * 40)
         print(

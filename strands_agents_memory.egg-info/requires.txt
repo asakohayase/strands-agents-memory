@@ -12,3 +12,4 @@ python-dotenv>=1.1.1
 arize-phoenix
 arize-otel>=0.10.0
 openinference-instrumentation-bedrock>=0.1.27
+arize[datasets]>=7.50.0

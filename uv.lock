@@ -181,6 +181,35 @@ wheels = [
 ]
 
 [[package]]
+name = "arize"
+version = "7.50.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "googleapis-common-protos" },
+    { name = "pandas" },
+    { name = "protobuf" },
+    { name = "pyarrow" },
+    { name = "pydantic" },
+    { name = "requests-futures" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9e/87/95f7441d336e89798acacdb0067b5ed1a7dff93ffcab5bb272fcc14de64c/arize-7.50.0.tar.gz", hash = "sha256:5620babc39a5d302ca65b2fac7778323573c9fbda73dd8038ca648ce3f36bab6", size = 189771, upload-time = "2025-09-08T20:40:52.763Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/6c/b5a05ecdbc8c8a362e55edb3837e0a0cd3831cac19f5d06d08604786eb3a/arize-7.50.0-py3-none-any.whl", hash = "sha256:5876fbbba00cdfb4cc3b388d8f648acaf09fcc40ca8c73eba12cdc9ecfe9e6b5", size = 239445, upload-time = "2025-09-08T20:40:50.735Z" },
+]
+
+[package.optional-dependencies]
+datasets = [
+    { name = "deprecated" },
+    { name = "openinference-semantic-conventions" },
+    { name = "opentelemetry-exporter-otlp" },
+    { name = "opentelemetry-sdk" },
+    { name = "opentelemetry-semantic-conventions" },
+    { name = "typing-extensions" },
+    { name = "wrapt" },
+]
+
+[[package]]
 name = "arize-otel"
 version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -610,6 +639,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/55/a0/7ca79796e799a3e782045d29bf052b5cde7439a2bbb17f15ff44f7aacc63/dacite-1.9.2.tar.gz", hash = "sha256:6ccc3b299727c7aa17582f0021f6ae14d5de47c7227932c47fec4cdfefd26f09", size = 22420, upload-time = "2025-02-05T09:27:29.757Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/35/386550fd60316d1e37eccdda609b074113298f23cef5bddb2049823fe666/dacite-1.9.2-py3-none-any.whl", hash = "sha256:053f7c3f5128ca2e9aceb66892b1a3c8936d02c686e707bee96e19deef4bc4a0", size = 16600, upload-time = "2025-02-05T09:27:24.345Z" },
+]
+
+[[package]]
+name = "deprecated"
+version = "1.2.18"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "wrapt" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/98/97/06afe62762c9a8a86af0cfb7bfdab22a43ad17138b07af5b1a58442690a2/deprecated-1.2.18.tar.gz", hash = "sha256:422b6f6d859da6f2ef57857761bfb392480502a64c3028ca9bbe86085d72115d", size = 2928744, upload-time = "2025-01-27T10:46:25.7Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6e/c6/ac0b6c1e2d138f1002bcf799d330bd6d85084fece321e662a14223794041/Deprecated-1.2.18-py2.py3-none-any.whl", hash = "sha256:bd5011788200372a32418f888e326a09ff80d0214bd961147cfed01b5c018eec", size = 9998, upload-time = "2025-01-27T10:46:09.186Z" },
 ]
 
 [[package]]
@@ -3055,6 +3096,18 @@ wheels = [
 ]
 
 [[package]]
+name = "requests-futures"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/47/c4/fd48d1ac5110a5457c71ac7cc4caa93da10a80b8de71112430e439bdee22/requests-futures-1.0.0.tar.gz", hash = "sha256:35547502bf1958044716a03a2f47092a89efe8f9789ab0c4c528d9c9c30bc148", size = 10897, upload-time = "2019-06-11T03:22:24.361Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/63/9e/7b986554f6de56f1d43f9fdc410631009af6034027efa31f90867d264319/requests_futures-1.0.0-py2.py3-none-any.whl", hash = "sha256:633804c773b960cef009efe2a5585483443c6eac3c39cc64beba2884013bcdd9", size = 7448, upload-time = "2021-09-29T00:23:32.148Z" },
+]
+
+[[package]]
 name = "rich"
 version = "14.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3620,6 +3673,7 @@ name = "strands-agents-memory"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "arize", extra = ["datasets"] },
     { name = "arize-otel" },
     { name = "arize-phoenix" },
     { name = "faiss-cpu" },
@@ -3639,6 +3693,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "arize", extras = ["datasets"], specifier = ">=7.50.0" },
     { name = "arize-otel", specifier = ">=0.10.0" },
     { name = "arize-phoenix" },
     { name = "faiss-cpu", specifier = ">=1.11.0.post1" },
