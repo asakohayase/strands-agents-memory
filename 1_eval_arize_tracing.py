@@ -21,7 +21,7 @@ except ImportError:
 
 
 def run_arize_tracing():
-    """Arize AX with synthetic data using JSON test dataset"""
+    """Arize AX tracing with JSON test dataset"""
 
     if not ARIZE_AVAILABLE:
         print("Cannot run - missing arize-otel")
@@ -35,15 +35,15 @@ def run_arize_tracing():
         print("Error: Set ARIZE_SPACE_ID and ARIZE_API_KEY in .env file")
         return
 
-    # Register with Arize for SYNTHETIC testing
+    # Register with Arize for tracing
     tracer_provider = register(
         space_id=space_id,
         api_key=api_key,
-        project_name="strands-agents-memory-manual",
+        project_name="strands-agents-memory-tracing",
     )
-    print("Arize AX manual testing registered")
+    print("Arize AX tracing registered")
 
-    # Add instrumentation AFTER register
+    # Instrument Bedrock calls to capture LLM interaction traces (prompts, responses, token usage)
     BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
     print("Bedrock instrumentation enabled")
 
@@ -62,43 +62,19 @@ def run_arize_tracing():
 
         print(f"Using user_id: {user_id}")
 
-        # Run each step in the scenario
+        # Run each step in the scenario - automatically traced to Arize
         for step in scenario["steps"]:
-            query = step["user"]
-            print(f"\nQuery: {query}")
+            user_input = step["user"]
+            print(f"\nUser: {user_input}")
+            assistant.agent(user_input)
 
-            # Agent execution automatically traced to Arize
-            response = assistant.agent(query)
-
-            # Show metrics
-            print()
-            print("-" * 40)
-            print(
-                f"Total tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
-            )
-            print(
-                f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds"
-            )
-            print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
-            print("-" * 40)
-
-        # Run evaluation query
+        # Run evaluation query - automatically traced to Arize
         eval_query = scenario["evaluation_query"]
-        print(f"\nQuery: {eval_query}")
-        response = assistant.agent(eval_query)
-
-        # Show metrics
-        print()
-        print("-" * 40)
-        print(
-            f"Total tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
-        )
-        print(f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds")
-        print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
-        print("-" * 40)
+        print(f"\nEvaluation Query: {eval_query}")
+        assistant.agent(eval_query)
 
     print(f"\nView traces at: https://app.arize.com")
-    print(f"Project: strands-agents-memory-manual")
+    print(f"Project: strands-agents-memory-tracing")
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ try:
     ARIZE_AVAILABLE = True
 except ImportError as e:
     ARIZE_AVAILABLE = False
-    print(f'Install: pip install "arize[Datasets]" arize-phoenix openai pandas')
+    print(f'Install: uv add "arize[Datasets]" arize-phoenix openai pandas')
     print(f"Error: {e}")
 
 
@@ -176,7 +176,7 @@ def run_arize_llm_evaluation():
         print(f"Client init failed: {e}")
         return
 
-    # Load scenarios directly
+    # Load scenarios
     with open("movie_evaluation_scenarios.json", "r") as f:
         scenarios = json.load(f)
 
@@ -192,7 +192,7 @@ def run_arize_llm_evaluation():
 
             print(f"\n=== Running Experiment for Scenario {scenario_id} ===")
 
-            # Create dataset directly from scenario
+            # Create dataset from scenario
             row = {
                 "id": scenario["scenario_id"],
                 "description": scenario["description"],

@@ -9,7 +9,7 @@ load_dotenv()
 
 
 def setup_langfuse_opentelemetry():
-    """Setup LangFuse"""
+    """Setup LangFuse OpenTelemetry configuration"""
 
     # Get LangFuse credentials
     public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
@@ -27,12 +27,12 @@ def setup_langfuse_opentelemetry():
     os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = host + "/api/public/otel"
     os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = f"Authorization=Basic {auth}"
 
-    print("✅ LangFuse OpenTelemetry environment configured")
+    print("LangFuse OpenTelemetry configured")
     return True
 
 
 def run_langfuse_tracing():
-    """LangFuse dashboard visualization with JSON test dataset"""
+    """LangFuse tracing with JSON test dataset"""
 
     if not setup_langfuse_opentelemetry():
         return
@@ -40,22 +40,19 @@ def run_langfuse_tracing():
     try:
         from strands.telemetry import StrandsTelemetry
 
-        # Configure the telemetry (creates new tracer provider and sets it as global)
+        # Configure telemetry to send traces to LangFuse
         StrandsTelemetry().setup_otlp_exporter()
-        print("LangFuse manual testing registered")
+        print("LangFuse tracing registered")
 
     except ImportError:
         print(
-            "❌ Missing strands-agents[otel] - install with: uv add 'strands-agents[otel]'"
+            "Missing strands-agents[otel] - install with: uv add 'strands-agents[otel]'"
         )
         return
 
     # Load test scenarios from JSON file
     with open("movie_evaluation_scenarios.json", "r") as f:
         scenarios = json.load(f)
-
-    print("🎬 Running manual movie scenarios...")
-    print("All interactions will appear in your LangFuse dashboard\n")
 
     for scenario in scenarios:
         print(f"\n{'='*60}")
@@ -68,50 +65,24 @@ def run_langfuse_tracing():
 
         print(f"Using user_id: {user_id}")
 
-        # Add trace attributes that appear in LangFuse dashboard
+        # Add trace attributes for LangFuse dashboard organization
         assistant.agent.trace_attributes = {
             "session.id": f"scenario-{scenario['scenario_id']}-{user_id[:8]}",
             "user.id": user_id,
-            "langfuse.tags": [
-                "Synthetic-Data",
-                "Movie-Agent-Demo",
-                "Manual-Evaluation",
-                f"Scenario-{scenario['scenario_id']}",
-            ],
         }
 
-        # Run each step in the scenario
+        # Run each step in the scenario - automatically traced to LangFuse
         for step in scenario["steps"]:
-            query = step["user"]
-            print(f"\nQuery: {query}")
-            response = assistant.agent(query)
+            user_input = step["user"]
+            print(f"\nUser: {user_input}")
+            assistant.agent(user_input)
 
-            # Show metrics
-            print()
-            print("-" * 40)
-            print(
-                f"Total tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
-            )
-            print(
-                f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds"
-            )
-            print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
-            print("-" * 40)
-
-        # Run evaluation query
+        # Run evaluation query - automatically traced to LangFuse
         eval_query = scenario["evaluation_query"]
-        print(f"\nQuery: {eval_query}")
-        response = assistant.agent(eval_query)
+        print(f"\nEvaluation Query: {eval_query}")
+        assistant.agent(eval_query)
 
-        # Show metrics
-        print()
-        print("-" * 40)
-        print(
-            f"Total tokens: {response.metrics.accumulated_usage.get('totalTokens', 0)}"
-        )
-        print(f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds")
-        print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
-        print("-" * 40)
+    print(f"\nView traces at: https://cloud.langfuse.com")
 
 
 if __name__ == "__main__":
