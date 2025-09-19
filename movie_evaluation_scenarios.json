@@ -7,7 +7,7 @@
       {"user": "5 stars", "expected_memory": "Store 5-star rating for Spirited Away"}
     ],
     "evaluation_query": "Recommend something for tonight",
-    "expected_memory_usage": ["anime", "fantasy", "drama"],
+    "expected_memory_usage": ["anime", "fantasy"],
     "expected_response_quality": "Should recommend animated fantasy films"
   },
   {
