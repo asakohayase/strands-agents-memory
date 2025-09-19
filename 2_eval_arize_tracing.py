@@ -20,7 +20,7 @@ except ImportError:
     )
 
 
-def demonstrate_arize_manual():
+def run_arize_tracing():
     """Arize AX with synthetic data using JSON test dataset"""
 
     if not ARIZE_AVAILABLE:
@@ -102,4 +102,4 @@ def demonstrate_arize_manual():
 
 
 if __name__ == "__main__":
-    demonstrate_arize_manual()
+    run_arize_tracing()

@@ -8,7 +8,7 @@ from strands.agent.conversation_manager import SlidingWindowConversationManager
 load_dotenv()
 
 
-def demonstrate_strands_builtin():
+def run_strands_tracing():
     """Show basic Strands built-in metrics with isolated scenarios"""
 
     conversation_manager = SlidingWindowConversationManager(
@@ -60,4 +60,4 @@ def demonstrate_strands_builtin():
 
 
 if __name__ == "__main__":
-    demonstrate_strands_builtin()
+    run_strands_tracing()

@@ -31,7 +31,7 @@ def setup_langfuse_opentelemetry():
     return True
 
 
-def demonstrate_langfuse_manual():
+def run_langfuse_tracing():
     """LangFuse dashboard visualization with JSON test dataset"""
 
     if not setup_langfuse_opentelemetry():
@@ -115,4 +115,4 @@ def demonstrate_langfuse_manual():
 
 
 if __name__ == "__main__":
-    demonstrate_langfuse_manual()
+    run_langfuse_tracing()
