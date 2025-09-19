@@ -12,44 +12,13 @@ try:
     from arize.experimental.datasets.experiments.types import EvaluationResult
     from arize.experimental.datasets.utils.constants import GENERATIVE
     from phoenix.evals import llm_classify, OpenAIModel
+    from openinference.instrumentation import suppress_tracing
 
     ARIZE_AVAILABLE = True
 except ImportError as e:
     ARIZE_AVAILABLE = False
     print(f'Install: pip install "arize[Datasets]" arize-phoenix openai pandas')
     print(f"Error: {e}")
-
-
-def create_dataset(client, space_id):
-    """Create Arize dataset from movie scenarios"""
-
-    with open("movie_evaluation_scenarios.json", "r") as f:
-        scenarios = json.load(f)
-
-    rows = []
-    for scenario in scenarios:
-        row = {
-            "id": scenario["scenario_id"],
-            "description": scenario["description"],
-            "steps": json.dumps(scenario["steps"]),
-            "evaluation_query": scenario["evaluation_query"],
-            "expected_memory": json.dumps(scenario["expected_memory_usage"]),
-            "expected_quality": scenario["expected_response_quality"],
-        }
-        rows.append(row)
-
-    df = pd.DataFrame(rows)
-    dataset_name = f"movie_eval_{uuid.uuid4().hex[:8]}"
-
-    dataset_id = client.create_dataset(
-        space_id=space_id,
-        dataset_name=dataset_name,
-        dataset_type=GENERATIVE,
-        data=df,
-    )
-
-    print(f"Created dataset: {dataset_name} (ID: {dataset_id})")
-    return dataset_id
 
 
 def movie_task(dataset_row):
@@ -111,26 +80,23 @@ def memory_evaluator(output, dataset_row):
             ]
         )
 
-        result = llm_classify(
-            data=df,
-            template=template,
-            model=OpenAIModel(model="gpt-4o-mini"),
-            rails=["1", "2", "3", "4", "5"],
-            provide_explanation=True,
-        )
+        with suppress_tracing():
+            result = llm_classify(
+                data=df,
+                template=template,
+                model=OpenAIModel(model="gpt-4o-mini"),
+                rails=["1", "2", "3", "4", "5"],
+                provide_explanation=True,
+            )
 
         label = result["label"][0]
         score = int(label)
         explanation = result.get("explanation", [""])[0]
 
-        return EvaluationResult(
-            score=score, label=f"Memory: {score}/5", explanation=explanation
-        )
+        return EvaluationResult(score=score, label=str(score), explanation=explanation)
 
     except Exception as e:
-        return EvaluationResult(
-            score=0.0, label="Memory: error", explanation=f"Failed: {str(e)}"
-        )
+        return EvaluationResult(score=0.0, label="0", explanation=f"Failed: {str(e)}")
 
 
 def quality_evaluator(output, dataset_row):
@@ -164,26 +130,23 @@ def quality_evaluator(output, dataset_row):
             ]
         )
 
-        result = llm_classify(
-            data=df,
-            template=template,
-            model=OpenAIModel(model="gpt-4o-mini"),
-            rails=["1", "2", "3", "4", "5"],
-            provide_explanation=True,
-        )
+        with suppress_tracing():
+            result = llm_classify(
+                data=df,
+                template=template,
+                model=OpenAIModel(model="gpt-4o-mini"),
+                rails=["1", "2", "3", "4", "5"],
+                provide_explanation=True,
+            )
 
         label = result["label"][0]
         score = int(label)
         explanation = result.get("explanation", [""])[0]
 
-        return EvaluationResult(
-            score=score, label=f"Quality: {score}/5", explanation=explanation
-        )
+        return EvaluationResult(score=score, label=str(score), explanation=explanation)
 
     except Exception as e:
-        return EvaluationResult(
-            score=0.0, label="Quality: error", explanation=f"Failed: {str(e)}"
-        )
+        return EvaluationResult(score=0.0, label="0", explanation=f"Failed: {str(e)}")
 
 
 def run_arize_llm_evaluation():
@@ -213,32 +176,33 @@ def run_arize_llm_evaluation():
         print(f"Client init failed: {e}")
         return
 
-    # Create dataset
-    try:
-        dataset_id = create_dataset(client, space_id)
-    except Exception as e:
-        print(f"Dataset creation failed: {e}")
-        return
+    # Load scenarios directly
+    with open("movie_evaluation_scenarios.json", "r") as f:
+        scenarios = json.load(f)
 
-    # Run separate experiments per scenario
     print(f"\nRunning separate LLM-as-a-judge experiments per scenario...")
-    print(f"Dataset ID: {dataset_id}")
+    print(f"Total scenarios: {len(scenarios)}")
 
     try:
-        # Get the dataset
-        dataset = client.get_dataset(space_id=space_id, dataset_id=dataset_id)
-
         experiment_results = []
 
         # Process each scenario as a separate experiment
-        for idx, row in dataset.iterrows():
-            scenario_data = row.to_dict()
-            scenario_id = scenario_data.get("id", idx + 1)
+        for scenario in scenarios:
+            scenario_id = scenario["scenario_id"]
 
             print(f"\n=== Running Experiment for Scenario {scenario_id} ===")
 
-            # Create single-row dataset for this scenario
-            single_row_df = pd.DataFrame([scenario_data])
+            # Create dataset directly from scenario
+            row = {
+                "id": scenario["scenario_id"],
+                "description": scenario["description"],
+                "steps": json.dumps(scenario["steps"]),
+                "evaluation_query": scenario["evaluation_query"],
+                "expected_memory": json.dumps(scenario["expected_memory_usage"]),
+                "expected_quality": scenario["expected_response_quality"],
+            }
+
+            single_row_df = pd.DataFrame([row])
             scenario_dataset_name = f"scenario_{scenario_id}_{uuid.uuid4().hex[:8]}"
 
             scenario_dataset_id = client.create_dataset(
@@ -274,17 +238,13 @@ def run_arize_llm_evaluation():
                     memory_score = results_df.iloc[0].get(
                         "eval.memory_evaluator.score", "N/A"
                     )
-                    memory_label = results_df.iloc[0].get(
-                        "eval.memory_evaluator.label", "N/A"
-                    )
                     quality_score = results_df.iloc[0].get(
                         "eval.quality_evaluator.score", "N/A"
                     )
-                    quality_label = results_df.iloc[0].get(
-                        "eval.quality_evaluator.label", "N/A"
-                    )
 
-                    print(f"Final Results: {memory_label} | {quality_label}")
+                    print(
+                        f"Final Results: Memory {memory_score}/5 | Quality {quality_score}/5"
+                    )
 
                 experiment_results.append(
                     {
