@@ -3,10 +3,14 @@ import json
 import uuid
 import pandas as pd
 from dotenv import load_dotenv
-from main import MovieRecommendationAssistant
+from main import (
+    MovieRecommendationAssistant,
+)  # Custom assistant for movie recommendations
 
+# Load environment variables from .env file
 load_dotenv()
 
+# Try importing Arize dependencies
 try:
     from arize.experimental.datasets import ArizeDatasetsClient
     from arize.experimental.datasets.experiments.types import EvaluationResult
@@ -17,27 +21,33 @@ try:
     ARIZE_AVAILABLE = True
 except ImportError as e:
     ARIZE_AVAILABLE = False
-    print(f'Install: uv add "arize[Datasets]" arize-phoenix openai pandas')
+    print('Install: uv add "arize[Datasets]" arize-phoenix openai pandas')
     print(f"Error: {e}")
 
 
 def movie_task(dataset_row):
-    """Execute movie recommendation task"""
+    """
+    Task function executed for each row in the dataset.
+    Input: dataset_row containing scenario steps and evaluation query.
+    Output: final response text from the AI assistant.
+    """
     try:
-        steps = json.loads(dataset_row.get("steps", "[]"))
-        eval_query = dataset_row.get("evaluation_query", "")
+        steps = json.loads(dataset_row.get("steps", "[]"))  # Load scenario steps
+        eval_query = dataset_row.get(
+            "evaluation_query", ""
+        )  # Final query for evaluation
 
-        user_id = str(uuid.uuid4())
+        user_id = str(uuid.uuid4())  # Unique ID for this session
         assistant = MovieRecommendationAssistant(user_id=user_id)
 
-        # Run scenario steps
+        # Execute all steps in the scenario
         for step in steps:
             assistant.agent(step["user"])
 
-        # Get final response
+        # Execute the final evaluation query
         result = assistant.agent(eval_query)
 
-        # Extract the actual text from the message structure
+        # Extract text from the agent's structured message
         response_text = result.message["content"][0]["text"]
 
         return response_text
@@ -47,8 +57,11 @@ def movie_task(dataset_row):
 
 
 def memory_evaluator(output, dataset_row):
-    """Evaluate memory utilization using LLM"""
-
+    """
+    Evaluator function to score memory usage.
+    Input: output from task and dataset_row.
+    Output: EvaluationResult containing score, label, and explanation.
+    """
     template = """
     Evaluate if the AI agent correctly used stored user preferences.
     
@@ -57,11 +70,11 @@ def memory_evaluator(output, dataset_row):
     Expected Memory Usage: {expected_memory}
     
     Score the memory utilization on a 1-5 scale:
-    5 = Perfect use of stored preferences
-    4 = Good use with minor gaps
-    3 = Partial use of stored preferences  
-    2 = Minimal use of stored preferences
-    1 = Ignores stored preferences
+    5 = Perfect use
+    4 = Good use
+    3 = Partial use
+    2 = Minimal use
+    1 = Ignored
     
     Respond with: 1, 2, 3, 4, or 5
     """
@@ -80,6 +93,7 @@ def memory_evaluator(output, dataset_row):
             ]
         )
 
+        # Run LLM classification
         with suppress_tracing():
             result = llm_classify(
                 data=df,
@@ -100,8 +114,11 @@ def memory_evaluator(output, dataset_row):
 
 
 def quality_evaluator(output, dataset_row):
-    """Evaluate response quality using LLM"""
-
+    """
+    Evaluator function to score response quality.
+    Input: output from task and dataset_row.
+    Output: EvaluationResult containing score, label, and explanation.
+    """
     template = """
     Evaluate the quality of movie recommendations.
     
@@ -109,11 +126,11 @@ def quality_evaluator(output, dataset_row):
     Expected Quality: {expected_quality}
     
     Score the response quality on a 1-5 scale:
-    5 = Excellent recommendations, very helpful
-    4 = Good recommendations with minor issues
-    3 = Adequate recommendations
-    2 = Poor recommendations with major issues
-    1 = Terrible or unhelpful recommendations
+    5 = Excellent
+    4 = Good
+    3 = Adequate
+    2 = Poor
+    1 = Terrible
     
     Respond with: 1, 2, 3, 4, or 5
     """
@@ -121,14 +138,7 @@ def quality_evaluator(output, dataset_row):
     try:
         expected_quality = dataset_row.get("expected_quality", "")
 
-        df = pd.DataFrame(
-            [
-                {
-                    "output": output,
-                    "expected_quality": expected_quality,
-                }
-            ]
-        )
+        df = pd.DataFrame([{"output": output, "expected_quality": expected_quality}])
 
         with suppress_tracing():
             result = llm_classify(
@@ -150,13 +160,21 @@ def quality_evaluator(output, dataset_row):
 
 
 def run_arize_llm_evaluation():
-    """Run complete LLM-as-a-judge evaluation with Arize"""
-
+    """
+    Main function to run LLM-as-a-judge experiments.
+    Steps:
+    1. Initialize Arize client.
+    2. Load scenarios from JSON.
+    3. For each scenario:
+       - Create dataset.
+       - Run task to generate output.
+       - Run evaluators to score output.
+    4. Collect and print results.
+    """
     if not ARIZE_AVAILABLE:
         print("Missing Arize dependencies")
         return
 
-    # Get credentials
     api_key = os.getenv("ARIZE_API_KEY")
     developer_key = os.getenv("ARIZE_DEVELOPER_KEY")
     space_id = os.getenv("ARIZE_SPACE_ID")
@@ -165,133 +183,92 @@ def run_arize_llm_evaluation():
         print("Missing ARIZE_API_KEY/ARIZE_DEVELOPER_KEY and ARIZE_SPACE_ID")
         return
 
-    # Initialize client
     try:
-        if developer_key:
-            client = ArizeDatasetsClient(developer_key=developer_key)
-        else:
-            client = ArizeDatasetsClient(api_key=api_key)
+        client = (
+            ArizeDatasetsClient(developer_key=developer_key)
+            if developer_key
+            else ArizeDatasetsClient(api_key=api_key)
+        )
         print("Arize client initialized")
     except Exception as e:
         print(f"Client init failed: {e}")
         return
 
-    # Load scenarios
     with open("movie_evaluation_scenarios.json", "r") as f:
         scenarios = json.load(f)
 
-    print(f"\nRunning separate LLM-as-a-judge experiments per scenario...")
-    print(f"Total scenarios: {len(scenarios)}")
+    print(f"Running experiments for {len(scenarios)} scenarios...")
 
-    try:
-        experiment_results = []
+    experiment_results = []
 
-        # Process each scenario as a separate experiment
-        for scenario in scenarios:
-            scenario_id = scenario["scenario_id"]
+    for scenario in scenarios:
+        scenario_id = scenario["scenario_id"]
+        print(f"\n=== Scenario {scenario_id} ===")
 
-            print(f"\n=== Running Experiment for Scenario {scenario_id} ===")
+        row = {
+            "id": scenario_id,
+            "description": scenario["description"],
+            "steps": json.dumps(scenario["steps"]),
+            "evaluation_query": scenario["evaluation_query"],
+            "expected_memory": json.dumps(scenario["expected_memory_usage"]),
+            "expected_quality": scenario["expected_response_quality"],
+        }
 
-            # Create dataset from scenario
-            row = {
-                "id": scenario["scenario_id"],
-                "description": scenario["description"],
-                "steps": json.dumps(scenario["steps"]),
-                "evaluation_query": scenario["evaluation_query"],
-                "expected_memory": json.dumps(scenario["expected_memory_usage"]),
-                "expected_quality": scenario["expected_response_quality"],
-            }
+        single_row_df = pd.DataFrame([row])
+        scenario_dataset_name = f"scenario_{scenario_id}_{uuid.uuid4().hex[:8]}"
 
-            single_row_df = pd.DataFrame([row])
-            scenario_dataset_name = f"scenario_{scenario_id}_{uuid.uuid4().hex[:8]}"
+        # Create dataset for this scenario
+        scenario_dataset_id = client.create_dataset(
+            space_id=space_id,
+            dataset_name=scenario_dataset_name,
+            dataset_type=GENERATIVE,
+            data=single_row_df,
+        )
+        print(f"Created dataset: {scenario_dataset_name}")
 
-            scenario_dataset_id = client.create_dataset(
-                space_id=space_id,
-                dataset_name=scenario_dataset_name,
-                dataset_type=GENERATIVE,
-                data=single_row_df,
+        # Run experiment: generate output and score it
+        result = client.run_experiment(
+            space_id=space_id,
+            dataset_id=scenario_dataset_id,
+            task=movie_task,  # Generates output
+            evaluators=[memory_evaluator, quality_evaluator],  # Scores output
+            experiment_name=f"scenario_{scenario_id}_{uuid.uuid4().hex[:8]}",
+            exit_on_error=False,
+        )
+
+        if isinstance(result, tuple):
+            experiment_id, results_df = result
+            print(f"Scenario {scenario_id} completed! Experiment ID: {experiment_id}")
+            if not results_df.empty:
+                memory_score = results_df.iloc[0].get(
+                    "eval.memory_evaluator.score", "N/A"
+                )
+                quality_score = results_df.iloc[0].get(
+                    "eval.quality_evaluator.score", "N/A"
+                )
+                print(f"Scores: Memory {memory_score}/5 | Quality {quality_score}/5")
+
+            experiment_results.append(
+                {
+                    "scenario_id": scenario_id,
+                    "experiment_id": experiment_id,
+                    "results_df": results_df,
+                }
+            )
+        else:
+            print(f"Unexpected result type for scenario {scenario_id}: {type(result)}")
+            experiment_results.append(
+                {
+                    "scenario_id": scenario_id,
+                    "experiment_id": None,
+                    "error": f"Unexpected result: {result}",
+                }
             )
 
-            print(f"Created scenario dataset: {scenario_dataset_name}")
+        print("-" * 60)
 
-            # Run experiment for this single scenario
-            result = client.run_experiment(
-                space_id=space_id,
-                dataset_id=scenario_dataset_id,
-                task=movie_task,
-                evaluators=[memory_evaluator, quality_evaluator],
-                experiment_name=f"scenario_{scenario_id}_{uuid.uuid4().hex[:8]}",
-                exit_on_error=False,
-            )
-
-            # Handle tuple result properly
-            if isinstance(result, tuple):
-                experiment_id, results_df = result
-                print(f"Scenario {scenario_id} completed!")
-                print(f"Experiment ID: {experiment_id}")
-                print(
-                    f"Results URL: https://app.arize.com/spaces/{space_id}/experiments/{experiment_id}"
-                )
-
-                # Print evaluation results
-                if not results_df.empty:
-                    memory_score = results_df.iloc[0].get(
-                        "eval.memory_evaluator.score", "N/A"
-                    )
-                    quality_score = results_df.iloc[0].get(
-                        "eval.quality_evaluator.score", "N/A"
-                    )
-
-                    print(
-                        f"Final Results: Memory {memory_score}/5 | Quality {quality_score}/5"
-                    )
-
-                experiment_results.append(
-                    {
-                        "scenario_id": scenario_id,
-                        "experiment_id": experiment_id,
-                        "results_df": results_df,
-                    }
-                )
-
-            else:
-                print(
-                    f"Unexpected result type for scenario {scenario_id}: {type(result)}"
-                )
-                experiment_results.append(
-                    {
-                        "scenario_id": scenario_id,
-                        "experiment_id": None,
-                        "error": f"Unexpected result: {result}",
-                    }
-                )
-
-            print("-" * 60)
-
-        # Print final summary
-        print(f"\n=== ALL EXPERIMENTS COMPLETE ===")
-        print(f"Successfully ran {len(experiment_results)} separate experiments")
-
-        for exp_result in experiment_results:
-            scenario_id = exp_result["scenario_id"]
-            exp_id = exp_result["experiment_id"]
-            if exp_id:
-                print(
-                    f"Scenario {scenario_id}: https://app.arize.com/spaces/{space_id}/experiments/{exp_id}"
-                )
-            else:
-                print(
-                    f"Scenario {scenario_id}: Failed - {exp_result.get('error', 'Unknown error')}"
-                )
-
-        return experiment_results
-
-    except Exception as e:
-        print(f"Experiments failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return None
+    print(f"All experiments complete: {len(experiment_results)} scenarios processed")
+    return experiment_results
 
 
 if __name__ == "__main__":
