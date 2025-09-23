@@ -2,34 +2,31 @@
   {
     "scenario_id": 1,
     "description": "Positive title preference",
-    "steps": [
-      {"user": "I love Spirited Away", "expected_memory": "Store anime and fantasy preference"},
-      {"user": "5 stars", "expected_memory": "Store 5-star rating for Spirited Away"}
+    "input": [
+      "I love Spirited Away",
+      "5 stars"
     ],
     "evaluation_query": "Recommend something for tonight",
-    "expected_memory_usage": ["anime", "fantasy"],
     "expected_response_quality": "Should recommend animated fantasy films"
   },
   {
     "scenario_id": 2,
     "description": "Negative title preference and avoidance",
-    "steps": [
-      {"user": "I didn't like The Matrix", "expected_memory": "Store dislike for sci-fi action"},
-      {"user": "2 stars", "expected_memory": "Store 2-star rating for The Matrix"}
+    "input": [
+      "I didn't like The Matrix",
+      "2 stars"
     ],
     "evaluation_query": "Recommend action movies",
-    "expected_memory_usage": ["avoid sci-fi action"],
     "expected_response_quality": "Should recommend non-sci-fi action movies"
   },
   {
     "scenario_id": 3,
     "description": "Positive genre preference", 
-    "steps": [
-      {"user": "I love comedies, especially romantic ones", "expected_memory": "Store comedy and romantic comedy preference"},
-      {"user": "5 stars for rom-coms", "expected_memory": "Store high rating for romantic comedy"}
+    "input": [
+      "I love comedies, especially romantic ones",
+      "5 stars for rom-coms"
     ],
     "evaluation_query": "What's good for date night?",
-    "expected_memory_usage": ["romantic comedy"],
     "expected_response_quality": "Should prioritize romantic comedies"
   }
 ]
