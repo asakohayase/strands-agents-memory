@@ -71,9 +71,8 @@ def run_langfuse_tracing():
             "user.id": user_id,
         }
 
-        # Run each step in the scenario - automatically traced to LangFuse
-        for step in scenario["steps"]:
-            user_input = step["user"]
+        # Run each input message in the scenario - automatically traced to LangFuse
+        for user_input in scenario["input"]:
             print(f"\nUser: {user_input}")
             assistant.agent(user_input)
 

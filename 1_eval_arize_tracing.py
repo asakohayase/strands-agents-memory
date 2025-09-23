@@ -62,9 +62,8 @@ def run_arize_tracing():
 
         print(f"Using user_id: {user_id}")
 
-        # Run each step in the scenario - automatically traced to Arize
-        for step in scenario["steps"]:
-            user_input = step["user"]
+        # Run each input message in the scenario - automatically traced to Arize
+        for user_input in scenario["input"]:
             print(f"\nUser: {user_input}")
             assistant.agent(user_input)
 

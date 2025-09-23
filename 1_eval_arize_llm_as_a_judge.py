@@ -28,11 +28,13 @@ except ImportError as e:
 def movie_task(dataset_row):
     """
     Task function executed for each row in the dataset.
-    Input: dataset_row containing scenario steps and evaluation query.
+    Input: dataset_row containing scenario input messages and evaluation query.
     Output: final response text from the AI assistant.
     """
     try:
-        steps = json.loads(dataset_row.get("steps", "[]"))  # Load scenario steps
+        input_messages = json.loads(
+            dataset_row.get("input", "[]")
+        )  # Load scenario input messages
         eval_query = dataset_row.get(
             "evaluation_query", ""
         )  # Final query for evaluation
@@ -40,9 +42,9 @@ def movie_task(dataset_row):
         user_id = str(uuid.uuid4())  # Unique ID for this session
         assistant = MovieRecommendationAssistant(user_id=user_id)
 
-        # Execute all steps in the scenario
-        for step in steps:
-            assistant.agent(step["user"])
+        # Execute all input messages in the scenario
+        for message in input_messages:
+            assistant.agent(message)
 
         # Execute the final evaluation query
         result = assistant.agent(eval_query)
@@ -56,63 +58,6 @@ def movie_task(dataset_row):
         return f"Task failed: {str(e)}"
 
 
-def memory_evaluator(output, dataset_row):
-    """
-    Evaluator function to score memory usage.
-    Input: output from task and dataset_row.
-    Output: EvaluationResult containing score, label, and explanation.
-    """
-    template = """
-    Evaluate if the AI agent correctly used stored user preferences.
-    
-    Scenario: {description}
-    Agent Response: {output}
-    Expected Memory Usage: {expected_memory}
-    
-    Score the memory utilization on a 1-5 scale:
-    5 = Perfect use
-    4 = Good use
-    3 = Partial use
-    2 = Minimal use
-    1 = Ignored
-    
-    Respond with: 1, 2, 3, 4, or 5
-    """
-
-    try:
-        description = dataset_row.get("description", "")
-        expected_memory = dataset_row.get("expected_memory", "[]")
-
-        df = pd.DataFrame(
-            [
-                {
-                    "description": description,
-                    "output": output,
-                    "expected_memory": expected_memory,
-                }
-            ]
-        )
-
-        # Run LLM classification
-        with suppress_tracing():
-            result = llm_classify(
-                data=df,
-                template=template,
-                model=OpenAIModel(model="gpt-4o-mini"),
-                rails=["1", "2", "3", "4", "5"],
-                provide_explanation=True,
-            )
-
-        label = result["label"][0]
-        score = int(label)
-        explanation = result.get("explanation", [""])[0]
-
-        return EvaluationResult(score=score, label=str(score), explanation=explanation)
-
-    except Exception as e:
-        return EvaluationResult(score=0.0, label="0", explanation=f"Failed: {str(e)}")
-
-
 def quality_evaluator(output, dataset_row):
     """
     Evaluator function to score response quality.
@@ -120,25 +65,40 @@ def quality_evaluator(output, dataset_row):
     Output: EvaluationResult containing score, label, and explanation.
     """
     template = """
-    Evaluate the quality of movie recommendations.
+    Evaluate the quality of movie recommendations based on the conversation context.
     
+    Scenario Description: {description}
+    Conversation Input: {input}
     Agent Response: {output}
     Expected Quality: {expected_quality}
     
-    Score the response quality on a 1-5 scale:
-    5 = Excellent
-    4 = Good
-    3 = Adequate
-    2 = Poor
-    1 = Terrible
+    Based on the conversation context, score how well the agent's recommendations 
+    align with the user's expressed preferences:
+    
+    5 = Excellent - Perfect alignment with user preferences
+    4 = Good - Strong alignment with minor gaps
+    3 = Adequate - Some alignment but could be better
+    2 = Poor - Minimal alignment with preferences
+    1 = Terrible - No alignment or inappropriate recommendations
     
     Respond with: 1, 2, 3, 4, or 5
     """
 
     try:
+        description = dataset_row.get("description", "")
+        input_data = dataset_row.get("input", "[]")
         expected_quality = dataset_row.get("expected_quality", "")
 
-        df = pd.DataFrame([{"output": output, "expected_quality": expected_quality}])
+        df = pd.DataFrame(
+            [
+                {
+                    "description": description,
+                    "input": input_data,
+                    "output": output,
+                    "expected_quality": expected_quality,
+                }
+            ]
+        )
 
         with suppress_tracing():
             result = llm_classify(
@@ -208,9 +168,8 @@ def run_arize_llm_evaluation():
         row = {
             "id": scenario_id,
             "description": scenario["description"],
-            "steps": json.dumps(scenario["steps"]),
+            "input": json.dumps(scenario["input"]),
             "evaluation_query": scenario["evaluation_query"],
-            "expected_memory": json.dumps(scenario["expected_memory_usage"]),
             "expected_quality": scenario["expected_response_quality"],
         }
 
@@ -231,7 +190,7 @@ def run_arize_llm_evaluation():
             space_id=space_id,
             dataset_id=scenario_dataset_id,
             task=movie_task,  # Generates output
-            evaluators=[memory_evaluator, quality_evaluator],  # Scores output
+            evaluators=[quality_evaluator],  # Score output quality only
             experiment_name=f"scenario_{scenario_id}_{uuid.uuid4().hex[:8]}",
             exit_on_error=False,
         )
@@ -240,13 +199,10 @@ def run_arize_llm_evaluation():
             experiment_id, results_df = result
             print(f"Scenario {scenario_id} completed! Experiment ID: {experiment_id}")
             if not results_df.empty:
-                memory_score = results_df.iloc[0].get(
-                    "eval.memory_evaluator.score", "N/A"
-                )
                 quality_score = results_df.iloc[0].get(
                     "eval.quality_evaluator.score", "N/A"
                 )
-                print(f"Scores: Memory {memory_score}/5 | Quality {quality_score}/5")
+                print(f"Quality Score: {quality_score}/5")
 
             experiment_results.append(
                 {
