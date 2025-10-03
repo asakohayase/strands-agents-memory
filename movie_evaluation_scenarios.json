@@ -1,7 +1,7 @@
 [
   {
     "scenario_id": 1,
-    "description": "Positive title preference",
+    "description": "Essential - positive title preference",
     "input": [
       "I love Spirited Away",
       "5 stars"
@@ -11,22 +11,22 @@
   },
   {
     "scenario_id": 2,
-    "description": "Negative title preference and avoidance",
-    "input": [
-      "I didn't like The Matrix",
-      "2 stars"
-    ],
-    "evaluation_query": "Recommend action movies",
-    "expected_response_quality": "Should recommend non-sci-fi action movies"
-  },
-  {
-    "scenario_id": 3,
-    "description": "Positive genre preference", 
+    "description": "Average - positive genre preference", 
     "input": [
       "I love comedies, especially romantic ones",
       "5 stars for rom-coms"
     ],
     "evaluation_query": "What's good for date night?",
     "expected_response_quality": "Should prioritize romantic comedies"
+  },
+  {
+    "scenario_id": 3,
+    "description": "Edge case - negative title preference with contradictory request",
+    "input": [
+      "I didn't like The Matrix",
+      "2 stars"
+    ],
+    "evaluation_query": "Recommend action movies",
+    "expected_response_quality": "Should recommend action movies but avoid The Matrix series"
   }
 ]

@@ -18,3 +18,5 @@ Requires-Dist: arize-phoenix
 Requires-Dist: arize-otel>=0.10.0
 Requires-Dist: openinference-instrumentation-bedrock>=0.1.27
 Requires-Dist: arize[datasets]>=7.50.0
+Requires-Dist: opentelemetry-sdk>=1.36.0
+Requires-Dist: opentelemetry-exporter-otlp-proto-grpc>=1.36.0

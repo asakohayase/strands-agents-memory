@@ -4,28 +4,20 @@ import uuid
 from dotenv import load_dotenv
 from main import MovieRecommendationAssistant
 
+# OpenTelemetry imports for manual setup
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from strands_to_openinference_mapping import StrandsToOpenInferenceProcessor
+
 # Load environment variables
 load_dotenv()
 
-# Import Arize libraries
-try:
-    from arize.otel import register
-    from openinference.instrumentation.bedrock import BedrockInstrumentor
-
-    ARIZE_AVAILABLE = True
-except ImportError:
-    ARIZE_AVAILABLE = False
-    print(
-        "Install: uv add arize-otel openinference-instrumentation-bedrock python-dotenv"
-    )
-
 
 def run_arize_tracing():
-    """Arize AX tracing with JSON test dataset"""
-
-    if not ARIZE_AVAILABLE:
-        print("Cannot run - missing arize-otel")
-        return
+    """Arize AX tracing - official manual OpenTelemetry setup"""
 
     # Get Arize credentials from .env file
     space_id = os.getenv("ARIZE_SPACE_ID")
@@ -35,26 +27,39 @@ def run_arize_tracing():
         print("Error: Set ARIZE_SPACE_ID and ARIZE_API_KEY in .env file")
         return
 
-    # Register with Arize for tracing
-    tracer_provider = register(
-        space_id=space_id,
-        api_key=api_key,
-        project_name="strands-agents-memory-tracing",
-    )
-    print("Arize AX tracing registered")
+    # Create the Strands to OpenInference processor
+    strands_processor = StrandsToOpenInferenceProcessor(debug=True)
 
-    # Instrument Bedrock calls to capture LLM interaction traces (prompts, responses, token usage)
-    BedrockInstrumentor().instrument(tracer_provider=tracer_provider)
-    print("Bedrock instrumentation enabled")
+    # Create resource with project name
+    resource = Resource.create(
+        {
+            "model_id": "strands-agents-memory-tracing",
+            "service.name": "strands-agent-integration",
+        }
+    )
+
+    # Create tracer provider and add processors
+    provider = TracerProvider(resource=resource)
+    provider.add_span_processor(strands_processor)
+
+    # Create OTLP exporter for Arize
+    otlp_exporter = OTLPSpanExporter(
+        endpoint="otlp.arize.com:443",
+        headers={"space_id": space_id, "api_key": api_key},
+    )
+    provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+
+    # Set the global tracer provider
+    trace.set_tracer_provider(provider)
 
     # Load test scenarios from JSON file
     with open("movie_evaluation_scenarios.json", "r") as f:
         scenarios = json.load(f)
 
     for scenario in scenarios:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"SCENARIO {scenario['scenario_id']}: {scenario['description']}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         # Create fresh assistant with unique UUID for each scenario
         user_id = str(uuid.uuid4())
@@ -62,12 +67,27 @@ def run_arize_tracing():
 
         print(f"Using user_id: {user_id}")
 
-        # Run each input message in the scenario - automatically traced to Arize
+        # Set STRANDS_AGENT_SYSTEM_PROMPT for the processor
+        os.environ["STRANDS_AGENT_SYSTEM_PROMPT"] = assistant.agent.system_prompt
+
+        # Add trace attributes for better organization in Arize
+        assistant.agent.trace_attributes = {
+            "session.id": f"scenario-{scenario['scenario_id']}-{user_id[:8]}",
+            "user.id": user_id,
+            "scenario.id": scenario["scenario_id"],
+            "arize.tags": [
+                "Agent-SDK",
+                "Arize-Project",
+                "OpenInference-Integration",
+            ],
+        }
+
+        # Run each input message in the scenario
         for user_input in scenario["input"]:
             print(f"\nUser: {user_input}")
             assistant.agent(user_input)
 
-        # Run evaluation query - automatically traced to Arize
+        # Run evaluation query
         eval_query = scenario["evaluation_query"]
         print(f"\nEvaluation Query: {eval_query}")
         assistant.agent(eval_query)
