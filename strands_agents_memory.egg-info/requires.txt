@@ -6,7 +6,6 @@ qdrant-client>=1.15.1
 sentence-transformers>=5.0.0
 faiss-cpu>=1.11.0.post1
 numpy>=1.26.0
-langfuse>=3.3.0
 pandas>=2.3.2
 python-dotenv>=1.1.1
 arize-phoenix

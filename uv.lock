@@ -1332,26 +1332,6 @@ wheels = [
 ]
 
 [[package]]
-name = "langfuse"
-version = "3.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "backoff" },
-    { name = "httpx" },
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "opentelemetry-sdk" },
-    { name = "packaging" },
-    { name = "pydantic" },
-    { name = "requests" },
-    { name = "wrapt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/28/bc/ee71839893de60de6fffd93b9ff874f50f13d5796de78fa721775b872b70/langfuse-3.3.0.tar.gz", hash = "sha256:1d951604da304a3e26d0e967adc15e5593a8d57c37bb0febe6bb1a790092f4c5", size = 153786, upload-time = "2025-08-19T13:01:35.494Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4b/33/0c3b1ef2969cd39bc8a4b411e11e0be14bfc85469d576b9c380c3e767c82/langfuse-3.3.0-py3-none-any.whl", hash = "sha256:12a3cc79f353181b5279385a0efb496368bfeacb7f1b1626df1ce4046d209770", size = 300301, upload-time = "2025-08-19T13:01:33.464Z" },
-]
-
-[[package]]
 name = "lxml"
 version = "6.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3677,7 +3657,6 @@ dependencies = [
     { name = "arize-otel" },
     { name = "arize-phoenix" },
     { name = "faiss-cpu" },
-    { name = "langfuse" },
     { name = "mem0ai" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -3699,7 +3678,6 @@ requires-dist = [
     { name = "arize-otel", specifier = ">=0.10.0" },
     { name = "arize-phoenix" },
     { name = "faiss-cpu", specifier = ">=1.11.0.post1" },
-    { name = "langfuse", specifier = ">=3.3.0" },
     { name = "mem0ai" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "openinference-instrumentation-bedrock", specifier = ">=0.1.27" },

@@ -11,7 +11,6 @@ Requires-Dist: qdrant-client>=1.15.1
 Requires-Dist: sentence-transformers>=5.0.0
 Requires-Dist: faiss-cpu>=1.11.0.post1
 Requires-Dist: numpy>=1.26.0
-Requires-Dist: langfuse>=3.3.0
 Requires-Dist: pandas>=2.3.2
 Requires-Dist: python-dotenv>=1.1.1
 Requires-Dist: arize-phoenix
